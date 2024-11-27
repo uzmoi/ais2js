@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "useGitignore": true,
+  "ignorePaths": ["package-lock.json", ".git", "__snapshots__"],
+  "words": [
+    "aiscript",
+    "astring",
+    "biomejs",
+    "Filenaming",
+    "fuga",
+    "hoge",
+    "lefthook",
+    "syuilo",
+    "tsup",
+    "uzmoi",
+    "vitest"
+  ]
+}

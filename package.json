@@ -1,0 +1,40 @@
+{
+  "name": "ais2js",
+  "version": "0.0.1",
+  "description": "",
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "check": "biome check",
+    "test": "vitest",
+    "spell": "cspell --no-progress ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uzmoi/ais2js.git"
+  },
+  "keywords": ["aiscript"],
+  "author": "uzmoi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/uzmoi/ais2js/issues"
+  },
+  "homepage": "https://github.com/uzmoi/ais2js#readme",
+  "dependencies": {
+    "@syuilo/aiscript": "^1.0.0-dev",
+    "ast-types": "^0.14.2",
+    "astring": "^1.9.0",
+    "source-map": "^0.8.0-beta.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "cspell": "^8.16.1",
+    "lefthook": "^1.8.4",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6"
+  }
+}
