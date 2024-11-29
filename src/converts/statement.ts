@@ -169,7 +169,7 @@ function* generateEach(
   const eachScope = scope.child();
 
   yield b.forOfStatement.from({
-    left: element,
+    left: b.variableDeclaration("const", [b.variableDeclarator(element)]),
     right: items,
     body: b.blockStatement([
       ...generateDefinitionDest(node.var!, element, eachScope),
