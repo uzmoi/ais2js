@@ -2,8 +2,14 @@ import type { Ast } from "@syuilo/aiscript";
 import { builders as b } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
 import type { Scope } from "../scope";
+import { generateAssignDest, generateDefinitionDest } from "./dest";
 import { generateExpression, generateRef } from "./expression";
-import { type CodeGenerator, createAssertion, randId } from "./utils";
+import {
+  type CodeGenerator,
+  createAssertion,
+  createThrowError,
+  randId,
+} from "./utils";
 
 export function* generateStatementList(
   statements: (Ast.Statement | Ast.Expression)[],
@@ -37,7 +43,12 @@ export function* generateStatement(
 ): CodeGenerator {
   switch (node.type) {
     case "def":
-      yield* generateDefinition(node, scope);
+      yield* generateDefinitionDest(
+        node.dest,
+        (yield* generateExpression(node.expr, scope)) ?? b.literal(null),
+        scope,
+        node.mut,
+      );
       break;
     case "assign":
     case "addAssign":
@@ -79,44 +90,71 @@ export function* generateStatement(
   return null;
 }
 
-function* generateDefinition(
-  node: Ast.Definition,
-  scope: Scope,
-): Generator<K.StatementKind, void> {
-  const init = yield* generateExpression(node.expr, scope);
-
-  // TODO: destに対応させる
-  yield b.variableDeclaration.from({
-    kind: node.mut ? "let" : "const",
-    declarations: [
-      b.variableDeclarator(
-        b.identifier((node.dest as Ast.Identifier).name),
-        init,
-      ),
-    ],
-    loc: node.loc,
-  });
-}
-
 function* generateAssign(
   node: Ast.Assign | Ast.AddAssign | Ast.SubAssign,
   scope: Scope,
 ): Generator<K.StatementKind, void> {
-  const operator =
-    node.type === "addAssign" ? "+=" : node.type === "subAssign" ? "-=" : "=";
+  const right =
+    (yield* generateExpression(node.expr, scope)) ?? b.literal(null);
 
-  // TODO: destに対応させる
-  const left = b.identifier((node.dest as Ast.Identifier).name);
-  const right = yield* generateExpression(node.expr, scope);
+  if (node.type === "assign") {
+    yield* generateAssignDest(node.dest, right, scope);
+  } else {
+    const operator = node.type === "addAssign" ? "+" : "-";
 
-  yield b.expressionStatement(
-    b.assignmentExpression.from({
-      operator,
-      left,
-      right: right ?? b.literal(null),
-      loc: node.loc,
-    }),
-  );
+    switch (node.dest.type) {
+      case "identifier": {
+        const jsName = scope.ref(node.dest.name);
+        if (jsName == null) {
+          yield createThrowError(
+            b.literal(`Undefined variable: ${node.dest.name}`),
+          );
+        } else {
+          yield b.expressionStatement(
+            b.assignmentExpression.from({
+              operator: `${operator}=`,
+              left: b.identifier.from({
+                name: jsName,
+                loc: node.dest.loc,
+              }),
+              right,
+              loc: node.loc,
+            }),
+          );
+        }
+        break;
+      }
+      case "index": {
+        const target = yield* generateRef(node.dest.target, scope);
+        const index = yield* generateRef(node.dest.index, scope);
+
+        const get = b.callExpression(b.identifier("getIndex"), [target, index]);
+        const newValue = b.binaryExpression(operator, get, right);
+        yield b.expressionStatement(
+          b.callExpression(b.identifier("setIndex"), [target, index, newValue]),
+        );
+        break;
+      }
+      case "prop": {
+        const target = yield* generateRef(node.dest.target, scope);
+        const name = b.literal(node.dest.name);
+
+        const get = b.callExpression(b.identifier("getProp"), [target, name]);
+        const newValue = b.binaryExpression(operator, get, right);
+        yield b.expressionStatement(
+          b.callExpression(b.identifier("setProp"), [target, name, newValue]),
+        );
+        break;
+      }
+      case "arr":
+      case "obj": {
+        yield createThrowError(b.literal(`Invalid dest: ${node.dest.type}`));
+        break;
+      }
+      default:
+        throw new Error("Invalid dest?");
+    }
+  }
 }
 
 function* generateEach(
@@ -126,13 +164,17 @@ function* generateEach(
   const items = yield* generateRef(node.items, scope);
   yield createAssertion("array", items);
 
+  const element = b.identifier(`__each_element_${randId()}__`);
+
   const eachScope = scope.child();
 
-  // TODO: destに対応させる
   yield b.forOfStatement.from({
-    left: b.identifier((node.var! as Ast.Identifier).name),
+    left: element,
     right: items,
-    body: b.blockStatement([...generateStatement(node.for, eachScope)]),
+    body: b.blockStatement([
+      ...generateDefinitionDest(node.var!, element, eachScope),
+      ...generateStatement(node.for, eachScope),
+    ]),
     loc: node.loc,
   });
 }

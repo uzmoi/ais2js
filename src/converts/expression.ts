@@ -3,13 +3,13 @@ import { NODE } from "@syuilo/aiscript/parser/utils.js";
 import { builders as b, namedTypes as n } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
 import type { Scope } from "../scope";
+import { generateDefinitionDest } from "./dest";
 import { generateStatement, generateStatementList } from "./statement";
 import {
   type CodeGenerator,
   createAssertion,
   createBlock,
   createThrowError,
-  flatResult,
   isA,
   randId,
 } from "./utils";
@@ -209,7 +209,7 @@ function* generateObject(node: Ast.Obj, scope: Scope) {
   const properties: n.ObjectProperty[] = [];
   for (const [key, value] of node.value) {
     properties.push(
-      b.objectProperty(b.stringLiteral(key), yield* generateRef(value, scope)),
+      b.objectProperty(b.literal(key), yield* generateRef(value, scope)),
     );
   }
 
@@ -224,9 +224,8 @@ function* generateFn(node: Ast.Fn, scope: Scope): CodeGenerator {
 
   const params: K.PatternKind[] = [];
   const defaults: (Ref | null)[] = [];
-  for (const param of node.params) {
-    // TODO: destに対応させる
-    params.push(b.identifier((param.dest as Ast.Identifier).name));
+  for (const [i, param] of node.params.entries()) {
+    params.push(b.identifier(`arg_${i}`));
     if (param.default) {
       defaults.push(yield* generateRef(param.default, scope));
     } else {
@@ -239,9 +238,21 @@ function* generateFn(node: Ast.Fn, scope: Scope): CodeGenerator {
     params,
     defaults,
     body: b.blockStatement([
-      ...flatResult(generateStatementList(node.children, fnScope), result =>
-        b.returnStatement(result),
-      ),
+      ...(function* generateFnBody() {
+        for (const [i, param] of node.params.entries()) {
+          yield* generateDefinitionDest(
+            param.dest,
+            b.identifier(`arg_${i}`),
+            fnScope,
+          );
+        }
+
+        const result = yield* generateStatementList(node.children, fnScope);
+
+        if (result != null) {
+          yield b.returnStatement(result);
+        }
+      })(),
     ]),
     expression: false,
     loc: node.loc,
