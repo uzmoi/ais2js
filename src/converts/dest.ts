@@ -17,11 +17,9 @@ export function* generateDefinitionDest(
         name: scope.define(node.name),
         loc: node.loc,
       });
-      yield b.variableDeclaration.from({
-        kind: mut ? "let" : "const",
-        declarations: [b.variableDeclarator(id, init)],
-        loc: node.loc,
-      });
+      yield b.variableDeclaration(mut ? "let" : "const", [
+        b.variableDeclarator(id, init),
+      ]);
       break;
     }
     case "arr": {
@@ -66,16 +64,12 @@ export function* generateAssignDest(
       if (jsName == null) {
         yield createThrowError(b.literal(`Undefined variable: ${node.name}`));
       } else {
+        const identifier = b.identifier.from({
+          name: jsName,
+          loc: node.loc,
+        });
         yield b.expressionStatement(
-          b.assignmentExpression.from({
-            operator: "=",
-            left: b.identifier.from({
-              name: jsName,
-              loc: node.loc,
-            }),
-            right: value,
-            loc: node.loc,
-          }),
+          b.assignmentExpression("=", identifier, value),
         );
       }
       break;

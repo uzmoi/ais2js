@@ -7,10 +7,10 @@ export type CodeGenerator = Iterable<K.StatementKind, K.ExpressionKind | null>;
 export const randId = () =>
   Math.random().toString(32).slice(2, 10).padEnd(8, "0").toUpperCase();
 
-export function* flatResult<T, R extends {}>(
+function* flatResult<T, R extends {}>(
   generator: Iterable<T, R | null | undefined>,
   f: (result: R) => T,
-): Generator<T> {
+): Generator<T, void> {
   const result = yield* generator;
 
   if (result != null) {
