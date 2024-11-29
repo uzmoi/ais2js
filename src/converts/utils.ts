@@ -36,6 +36,17 @@ export const createIife = (body: n.BlockStatement | K.ExpressionKind) =>
 export const createThrowError = (message: K.ExpressionKind) =>
   b.throwStatement(b.newExpression(b.identifier("Error"), [message]));
 
+export type InternalName =
+  | "repr"
+  | "get_prop"
+  | "set_prop"
+  | "get_index"
+  | "set_index"
+  | `assert_${AiScriptTypeName}`;
+
+export const callInternal = (name: InternalName, args: K.ExpressionKind[]) =>
+  b.callExpression(b.identifier(`__${name}`), args);
+
 type AiScriptTypeName =
   | "boolean"
   | "number"
@@ -44,34 +55,5 @@ type AiScriptTypeName =
   | "object"
   | "function";
 
-export const isA = (type: AiScriptTypeName, identifier: Ref) => {
-  switch (type) {
-    case "array":
-      return b.callExpression(
-        b.memberExpression(b.identifier("Array"), b.identifier("isArray")),
-        [identifier],
-      );
-    case "object":
-      return b.logicalExpression(
-        "&&",
-        b.binaryExpression("!=", identifier, b.literal(null)),
-        b.binaryExpression(
-          "==",
-          b.unaryExpression("typeof", identifier, true),
-          b.literal("object"),
-        ),
-      );
-    default:
-      return b.binaryExpression(
-        "==",
-        b.unaryExpression("typeof", identifier, true),
-        b.literal(type),
-      );
-  }
-};
-
-export const createAssertion = (type: AiScriptTypeName, identifier: Ref) =>
-  b.ifStatement(
-    b.unaryExpression("!", isA(type, identifier)),
-    createThrowError(b.literal(`Expected ${type} type.`)),
-  );
+export const createAssertion = (type: AiScriptTypeName, ref: Ref) =>
+  b.expressionStatement(callInternal(`assert_${type}`, [ref]));

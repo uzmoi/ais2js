@@ -2,8 +2,8 @@ import type { Ast } from "@syuilo/aiscript";
 import { builders as b } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
 import type { Scope } from "../scope";
-import { generateRef } from "./expression";
-import { createThrowError, randId } from "./utils";
+import { generateExpression, generateRef } from "./expression";
+import { callInternal, createThrowError, randId } from "./utils";
 
 export function* generateDefinitionDest(
   node: Ast.Expression,
@@ -31,15 +31,8 @@ export function* generateDefinitionDest(
       ]);
 
       for (const [i, element] of node.value.entries()) {
-        yield* generateDefinitionDest(
-          element,
-          b.callExpression(b.identifier("getIndex_internal"), [
-            initRef,
-            b.literal(i),
-          ]),
-          scope,
-          mut,
-        );
+        const get = callInternal("get_index", [initRef, b.literal(i)]);
+        yield* generateDefinitionDest(element, get, scope, mut);
       }
 
       break;
@@ -51,12 +44,8 @@ export function* generateDefinitionDest(
       ]);
 
       for (const [key, value] of node.value) {
-        yield* generateDefinitionDest(
-          value,
-          b.callExpression(b.identifier("getProp"), [initRef, b.literal(key)]),
-          scope,
-          mut,
-        );
+        const get = callInternal("get_prop", [initRef, b.literal(key)]);
+        yield* generateDefinitionDest(value, get, scope, mut);
       }
 
       break;
@@ -93,19 +82,20 @@ export function* generateAssignDest(
     }
     case "index": {
       const target = yield* generateRef(node.target, scope);
-      const index = yield* generateRef(node.index, scope);
-
+      const index = yield* generateExpression(node.index, scope);
       yield b.expressionStatement(
-        b.callExpression(b.identifier("setIndex"), [target, index, value]),
+        callInternal("set_index", [target, index ?? b.literal(null), value]),
       );
       break;
     }
     case "prop": {
-      const target = yield* generateRef(node.target, scope);
-      const name = b.literal(node.name);
-
+      const target = yield* generateExpression(node.target, scope);
       yield b.expressionStatement(
-        b.callExpression(b.identifier("setProp"), [target, name, value]),
+        callInternal("set_prop", [
+          target ?? b.literal(null),
+          b.literal(node.name),
+          value,
+        ]),
       );
       break;
     }
@@ -116,14 +106,8 @@ export function* generateAssignDest(
       ]);
 
       for (const [i, element] of node.value.entries()) {
-        yield* generateAssignDest(
-          element,
-          b.callExpression(b.identifier("getIndex_internal"), [
-            valueRef,
-            b.literal(i),
-          ]),
-          scope,
-        );
+        const get = callInternal("get_index", [valueRef, b.literal(i)]);
+        yield* generateAssignDest(element, get, scope);
       }
       break;
     }
@@ -134,11 +118,8 @@ export function* generateAssignDest(
       ]);
 
       for (const [key, dest] of node.value) {
-        yield* generateAssignDest(
-          dest,
-          b.callExpression(b.identifier("getProp"), [valueRef, b.literal(key)]),
-          scope,
-        );
+        const get = callInternal("get_prop", [valueRef, b.literal(key)]);
+        yield* generateAssignDest(dest, get, scope);
       }
       break;
     }

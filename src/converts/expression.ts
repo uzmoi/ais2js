@@ -7,11 +7,11 @@ import { generateDefinitionDest } from "./dest";
 import { generateStatement, generateStatementList } from "./statement";
 import {
   type CodeGenerator,
+  callInternal,
   createAssertion,
   createBlock,
   createIife,
   createThrowError,
-  isA,
   randId,
 } from "./utils";
 
@@ -141,10 +141,18 @@ export function* generateExpression(
         loc: node.loc,
       });
     }
-    case "index":
-      return yield* generateIndex(node, scope);
-    case "prop":
-      return yield* generateProp(node, scope);
+    case "index": {
+      const target = yield* generateRef(node.target, scope);
+      const index = yield* generateExpression(node.index, scope);
+      return callInternal("get_index", [target, index ?? b.literal(null)]);
+    }
+    case "prop": {
+      const target = yield* generateExpression(node.target, scope);
+      return callInternal("get_prop", [
+        target ?? b.literal(null),
+        b.literal(node.name),
+      ]);
+    }
     default:
       throw new Error(
         `Unknown node type: ${(node satisfies never as { type: string }).type}`,
@@ -179,7 +187,7 @@ function* generateTmpl(node: Ast.Tmpl, scope: Scope): CodeGenerator {
       b.assignmentExpression(
         "+=",
         result,
-        b.callExpression(b.identifier("repr"), [expression ?? b.literal(null)]),
+        callInternal("repr", [expression ?? b.literal(null)]),
       ),
     );
   }
@@ -339,79 +347,3 @@ function* generateLogicalOperator(
   //   loc: node.loc,
   // });
 }
-
-function* generateIndex(node: Ast.Index, scope: Scope): CodeGenerator {
-  const result = b.identifier(`__index_result_${randId()}__`);
-  yield b.variableDeclaration("let", [
-    b.variableDeclarator(result, b.literal(null)),
-  ]);
-
-  const target = yield* generateRef(node.target, scope);
-  const index = yield* generateRef(node.index, scope);
-
-  const arrayIndex = b.blockStatement([
-    createAssertion("number", index),
-    b.expressionStatement(
-      b.assignmentExpression(
-        "=",
-        result,
-        b.memberExpression.from({
-          object: target,
-          property: index,
-          computed: true,
-          loc: node.loc,
-        }),
-      ),
-    ),
-    b.ifStatement(
-      b.binaryExpression("===", result, b.identifier("undefined")),
-      createThrowError(b.literal("Index out of range.")),
-    ),
-  ]);
-
-  const objectIndex = b.expressionStatement(
-    b.assignmentExpression("=", result, objectProp(target, index, node.loc)),
-  );
-
-  yield b.ifStatement(
-    isA("array", target),
-    arrayIndex,
-    b.ifStatement(
-      isA("object", target),
-      objectIndex,
-      createThrowError(
-        // TODO: なんとかする
-        b.literal("`Cannot read prop (${repr(i)}) of ${target.type}.`"),
-      ),
-    ),
-  );
-
-  return result;
-}
-
-function* generateProp(node: Ast.Prop, scope: Scope): CodeGenerator {
-  const target = yield* generateRef(node.target, scope);
-  return b.conditionalExpression(
-    isA("object", target),
-    objectProp(target, b.literal(node.name), node.loc),
-    b.callExpression(b.identifier("builtinProperty"), [
-      target,
-      b.literal(node.name),
-    ]),
-  );
-}
-
-const objectProp = (
-  object: K.ExpressionKind,
-  prop: K.ExpressionKind,
-  loc: n.SourceLocation,
-) =>
-  b.logicalExpression(
-    "??",
-    b.callExpression.from({
-      callee: b.memberExpression(object, b.identifier("get"), false),
-      arguments: [prop],
-      loc,
-    }),
-    b.literal(null),
-  );

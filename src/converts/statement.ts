@@ -6,6 +6,7 @@ import { generateAssignDest, generateDefinitionDest } from "./dest";
 import { generateExpression, generateRef } from "./expression";
 import {
   type CodeGenerator,
+  callInternal,
   createAssertion,
   createThrowError,
   randId,
@@ -128,10 +129,10 @@ function* generateAssign(
         const target = yield* generateRef(node.dest.target, scope);
         const index = yield* generateRef(node.dest.index, scope);
 
-        const get = b.callExpression(b.identifier("getIndex"), [target, index]);
+        const get = callInternal("get_index", [target, index]);
         const newValue = b.binaryExpression(operator, get, right);
         yield b.expressionStatement(
-          b.callExpression(b.identifier("setIndex"), [target, index, newValue]),
+          callInternal("set_index", [target, index, newValue]),
         );
         break;
       }
@@ -139,10 +140,10 @@ function* generateAssign(
         const target = yield* generateRef(node.dest.target, scope);
         const name = b.literal(node.dest.name);
 
-        const get = b.callExpression(b.identifier("getProp"), [target, name]);
+        const get = callInternal("get_prop", [target, name]);
         const newValue = b.binaryExpression(operator, get, right);
         yield b.expressionStatement(
-          b.callExpression(b.identifier("setProp"), [target, name, newValue]),
+          callInternal("set_prop", [target, name, newValue]),
         );
         break;
       }
