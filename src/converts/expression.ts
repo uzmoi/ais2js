@@ -9,6 +9,7 @@ import {
   type CodeGenerator,
   createAssertion,
   createBlock,
+  createIife,
   createThrowError,
   isA,
   randId,
@@ -87,9 +88,7 @@ export function* generateExpression(
     case "identifier": {
       const jsName = scope.ref(node.name);
       if (jsName == null) {
-        const iife = (body: n.BlockStatement | K.ExpressionKind) =>
-          b.callExpression(b.arrowFunctionExpression([], body), []);
-        return iife(
+        return createIife(
           b.blockStatement([
             createThrowError(b.literal(`Undefined variable: ${node.name}`)),
           ]),

@@ -30,6 +30,9 @@ export const createBlock = (
     ),
   ]);
 
+export const createIife = (body: n.BlockStatement | K.ExpressionKind) =>
+  b.callExpression(b.arrowFunctionExpression([], body), []);
+
 export const createThrowError = (message: K.ExpressionKind) =>
   b.throwStatement(b.newExpression(b.identifier("Error"), [message]));
 
