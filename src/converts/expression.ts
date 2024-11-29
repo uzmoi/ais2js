@@ -206,10 +206,10 @@ function* generateArray(node: Ast.Arr, scope: Scope) {
 }
 
 function* generateObject(node: Ast.Obj, scope: Scope) {
-  const properties: n.ObjectProperty[] = [];
+  const properties: n.Property[] = [];
   for (const [key, value] of node.value) {
     properties.push(
-      b.objectProperty(b.literal(key), yield* generateRef(value, scope)),
+      b.property("init", b.literal(key), yield* generateRef(value, scope)),
     );
   }
 
