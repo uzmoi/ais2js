@@ -1,6 +1,7 @@
 import type { Ast } from "@syuilo/aiscript";
 import { builders as b } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
+import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateAssignDest, generateDefinitionDest } from "./dest";
 import { generateExpression, generateRef } from "./expression";
@@ -15,9 +16,10 @@ import {
 export function* generateStatementList(
   statements: (Ast.Statement | Ast.Expression)[],
   scope: Scope,
+  ctx: Context,
 ): CodeGenerator {
   for (const statement of statements.slice(0, -1)) {
-    const expression = yield* generateStatement(statement, scope);
+    const expression = yield* generateStatement(statement, scope, ctx);
     if (expression != null) {
       yield b.expressionStatement(expression);
     }
@@ -25,7 +27,7 @@ export function* generateStatementList(
 
   const last = statements.at(-1);
   if (last) {
-    const expression = yield* generateStatement(last, scope);
+    const expression = yield* generateStatement(last, scope, ctx);
     if (expression != null) {
       const result = b.identifier(`__run_result_${randId()}__`);
       yield b.variableDeclaration("const", [
@@ -41,12 +43,13 @@ export function* generateStatementList(
 export function* generateStatement(
   node: Ast.Statement | Ast.Expression,
   scope: Scope,
+  ctx: Context,
 ): CodeGenerator {
   switch (node.type) {
     case "def":
       yield* generateDefinitionDest(
         node.dest,
-        (yield* generateExpression(node.expr, scope)) ?? b.literal(null),
+        (yield* generateExpression(node.expr, scope, ctx)) ?? b.literal(null),
         scope,
         node.mut,
       );
@@ -54,25 +57,25 @@ export function* generateStatement(
     case "assign":
     case "addAssign":
     case "subAssign":
-      yield* generateAssign(node, scope);
+      yield* generateAssign(node, scope, ctx);
       break;
     case "return":
       yield b.returnStatement.from({
-        argument: yield* generateExpression(node.expr, scope),
+        argument: yield* generateExpression(node.expr, scope, ctx),
         loc: node.loc,
       });
       break;
     case "each":
-      yield* generateEach(node, scope);
+      yield* generateEach(node, scope, ctx);
       break;
     case "for":
-      yield* generateFor(node, scope);
+      yield* generateFor(node, scope, ctx);
       break;
     case "loop":
       yield b.whileStatement.from({
         test: b.literal(true),
         body: b.blockStatement([
-          ...generateStatementList(node.statements, scope.child()),
+          ...generateStatementList(node.statements, scope.child(), ctx),
         ]),
         loc: node.loc,
       });
@@ -84,7 +87,7 @@ export function* generateStatement(
       yield b.continueStatement.from({ loc: node.loc });
       break;
     default: {
-      return yield* generateExpression(node, scope);
+      return yield* generateExpression(node, scope, ctx);
     }
   }
 
@@ -94,12 +97,13 @@ export function* generateStatement(
 function* generateAssign(
   node: Ast.Assign | Ast.AddAssign | Ast.SubAssign,
   scope: Scope,
+  ctx: Context,
 ): Generator<K.StatementKind, void> {
   const right =
-    (yield* generateExpression(node.expr, scope)) ?? b.literal(null);
+    (yield* generateExpression(node.expr, scope, ctx)) ?? b.literal(null);
 
   if (node.type === "assign") {
-    yield* generateAssignDest(node.dest, right, scope);
+    yield* generateAssignDest(node.dest, right, scope, ctx);
   } else {
     const operator = node.type === "addAssign" ? "+" : "-";
 
@@ -126,8 +130,8 @@ function* generateAssign(
         break;
       }
       case "index": {
-        const target = yield* generateRef(node.dest.target, scope);
-        const index = yield* generateRef(node.dest.index, scope);
+        const target = yield* generateRef(node.dest.target, scope, ctx);
+        const index = yield* generateRef(node.dest.index, scope, ctx);
 
         const get = callInternal("get_index", [target, index]);
         const newValue = b.binaryExpression(operator, get, right);
@@ -137,7 +141,7 @@ function* generateAssign(
         break;
       }
       case "prop": {
-        const target = yield* generateRef(node.dest.target, scope);
+        const target = yield* generateRef(node.dest.target, scope, ctx);
         const name = b.literal(node.dest.name);
 
         const get = callInternal("get_prop", [target, name]);
@@ -161,8 +165,9 @@ function* generateAssign(
 function* generateEach(
   node: Ast.Each,
   scope: Scope,
+  ctx: Context,
 ): Generator<K.StatementKind, void> {
-  const items = yield* generateRef(node.items, scope);
+  const items = yield* generateRef(node.items, scope, ctx);
   yield createAssertion("array", items);
 
   const element = b.identifier(`__each_element_${randId()}__`);
@@ -174,7 +179,7 @@ function* generateEach(
     right: items,
     body: b.blockStatement([
       ...generateDefinitionDest(node.var!, element, eachScope),
-      ...generateStatement(node.for, eachScope),
+      ...generateStatement(node.for, eachScope, ctx),
     ]),
     loc: node.loc,
   });
@@ -183,9 +188,10 @@ function* generateEach(
 function* generateFor(
   node: Ast.For,
   scope: Scope,
+  ctx: Context,
 ): Generator<K.StatementKind, void> {
   if (node.times) {
-    const times = yield* generateRef(node.times, scope);
+    const times = yield* generateRef(node.times, scope, ctx);
     yield createAssertion("number", times);
 
     const index = b.identifier(`__for_index_${randId()}__`);
@@ -196,11 +202,11 @@ function* generateFor(
       ]),
       test: b.binaryExpression("<", index, times),
       update: b.updateExpression("++", index, false),
-      body: b.blockStatement([...generateStatement(node.for, scope)]),
+      body: b.blockStatement([...generateStatement(node.for, scope, ctx)]),
     });
   } else {
-    const from = yield* generateRef(node.from!, scope);
-    const to = yield* generateRef(node.to!, scope);
+    const from = yield* generateRef(node.from!, scope, ctx);
+    const to = yield* generateRef(node.to!, scope, ctx);
 
     yield createAssertion("number", from);
     yield createAssertion("number", to);
@@ -214,7 +220,7 @@ function* generateFor(
       init: b.variableDeclaration("let", [b.variableDeclarator(index, from)]),
       test: b.binaryExpression("<", index, b.binaryExpression("+", from, to)),
       update: b.updateExpression("++", index, false),
-      body: b.blockStatement([...generateStatement(node.for, forScope)]),
+      body: b.blockStatement([...generateStatement(node.for, forScope, ctx)]),
     });
   }
 }

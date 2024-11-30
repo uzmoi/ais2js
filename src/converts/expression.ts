@@ -2,6 +2,7 @@ import type { Ast } from "@syuilo/aiscript";
 import { NODE } from "@syuilo/aiscript/parser/utils.js";
 import { builders as b, namedTypes as n } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
+import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateDefinitionDest } from "./dest";
 import { generateStatement, generateStatementList } from "./statement";
@@ -20,8 +21,9 @@ export type Ref = n.Identifier | n.Literal;
 export function* generateRef(
   node: Ast.Expression,
   scope: Scope,
+  ctx: Context,
 ): Generator<K.StatementKind, Ref> {
-  const result = yield* generateExpression(node, scope);
+  const result = yield* generateExpression(node, scope, ctx);
   if (result == null) {
     return b.literal(null);
   }
@@ -49,6 +51,7 @@ export function* generateRef(
 export function* generateExpression(
   node: Ast.Expression,
   scope: Scope,
+  ctx: Context,
 ): CodeGenerator {
   switch (node.type) {
     // Literals
@@ -59,28 +62,28 @@ export function* generateExpression(
     case "str":
       return b.literal.from({ value: node.value, loc: node.loc });
     case "tmpl":
-      return yield* generateTmpl(node, scope);
+      return yield* generateTmpl(node, scope, ctx);
     case "arr":
-      return yield* generateArray(node, scope);
+      return yield* generateArray(node, scope, ctx);
     case "obj":
-      return yield* generateObject(node, scope);
+      return yield* generateObject(node, scope, ctx);
 
     // Flows
     case "and":
     case "or":
-      return yield* generateLogicalOperator(node, scope);
+      return yield* generateLogicalOperator(node, scope, ctx);
     case "if":
-      return yield* generateIf(node, scope);
+      return yield* generateIf(node, scope, ctx);
     case "match": {
       throw new Error("Not implemented yet.");
     }
     case "block": {
-      return yield* generateStatementList(node.statements, scope.child());
+      return yield* generateStatementList(node.statements, scope.child(), ctx);
     }
     case "fn":
-      return yield* generateFn(node, scope);
+      return yield* generateFn(node, scope, ctx);
     case "call":
-      return yield* generateCall(node, scope);
+      return yield* generateCall(node, scope, ctx);
 
     // Operation
     case "exists":
@@ -101,7 +104,7 @@ export function* generateExpression(
     }
     case "plus":
     case "minus": {
-      const expression = yield* generateRef(node.expr, scope);
+      const expression = yield* generateRef(node.expr, scope, ctx);
       yield createAssertion("number", expression);
       return b.unaryExpression.from({
         operator: node.type === "plus" ? "+" : "-",
@@ -110,7 +113,7 @@ export function* generateExpression(
       });
     }
     case "not": {
-      const expression = yield* generateRef(node.expr, scope);
+      const expression = yield* generateRef(node.expr, scope, ctx);
       yield createAssertion("boolean", expression);
       return b.unaryExpression.from({
         operator: "!",
@@ -130,8 +133,8 @@ export function* generateExpression(
     case "gteq":
     case "eq":
     case "neq": {
-      const left = yield* generateRef(node.left, scope);
-      const right = yield* generateRef(node.right, scope);
+      const left = yield* generateRef(node.left, scope, ctx);
+      const right = yield* generateRef(node.right, scope, ctx);
       yield createAssertion("number", left);
       yield createAssertion("number", right);
       return b.binaryExpression.from({
@@ -142,12 +145,12 @@ export function* generateExpression(
       });
     }
     case "index": {
-      const target = yield* generateRef(node.target, scope);
-      const index = yield* generateExpression(node.index, scope);
+      const target = yield* generateRef(node.target, scope, ctx);
+      const index = yield* generateExpression(node.index, scope, ctx);
       return callInternal("get_index", [target, index ?? b.literal(null)]);
     }
     case "prop": {
-      const target = yield* generateExpression(node.target, scope);
+      const target = yield* generateExpression(node.target, scope, ctx);
       return callInternal("get_prop", [
         target ?? b.literal(null),
         b.literal(node.name),
@@ -175,14 +178,18 @@ const binaryOperatorsMap = {
   neq: "!==",
 } as const;
 
-function* generateTmpl(node: Ast.Tmpl, scope: Scope): CodeGenerator {
+function* generateTmpl(
+  node: Ast.Tmpl,
+  scope: Scope,
+  ctx: Context,
+): CodeGenerator {
   const result = b.identifier(`__tmpl_${randId()}__`);
   yield b.variableDeclaration("let", [
     b.variableDeclarator(result, b.literal("")),
   ]);
 
   for (const templateElement of node.tmpl) {
-    const expression = yield* generateExpression(templateElement, scope);
+    const expression = yield* generateExpression(templateElement, scope, ctx);
     yield b.expressionStatement(
       b.assignmentExpression(
         "+=",
@@ -200,10 +207,14 @@ function* generateTmpl(node: Ast.Tmpl, scope: Scope): CodeGenerator {
   // });
 }
 
-function* generateArray(node: Ast.Arr, scope: Scope) {
+function* generateArray(
+  node: Ast.Arr,
+  scope: Scope,
+  ctx: Context,
+): CodeGenerator {
   const elements: K.ExpressionKind[] = [];
   for (const element of node.value) {
-    elements.push(yield* generateRef(element, scope));
+    elements.push(yield* generateRef(element, scope, ctx));
   }
 
   return b.arrayExpression.from({
@@ -212,11 +223,15 @@ function* generateArray(node: Ast.Arr, scope: Scope) {
   });
 }
 
-function* generateObject(node: Ast.Obj, scope: Scope) {
+function* generateObject(
+  node: Ast.Obj,
+  scope: Scope,
+  ctx: Context,
+): CodeGenerator {
   const properties: n.Property[] = [];
   for (const [key, value] of node.value) {
     properties.push(
-      b.property("init", b.literal(key), yield* generateRef(value, scope)),
+      b.property("init", b.literal(key), yield* generateRef(value, scope, ctx)),
     );
   }
 
@@ -226,7 +241,7 @@ function* generateObject(node: Ast.Obj, scope: Scope) {
   });
 }
 
-function* generateFn(node: Ast.Fn, scope: Scope): CodeGenerator {
+function* generateFn(node: Ast.Fn, scope: Scope, ctx: Context): CodeGenerator {
   const fnScope = scope.child();
 
   const params: K.PatternKind[] = [];
@@ -234,45 +249,54 @@ function* generateFn(node: Ast.Fn, scope: Scope): CodeGenerator {
   for (const [i, param] of node.params.entries()) {
     params.push(b.identifier(`arg_${i}`));
     if (param.default) {
-      defaults.push(yield* generateRef(param.default, scope));
+      defaults.push(yield* generateRef(param.default, scope, ctx));
     } else {
       defaults.push(null);
     }
   }
 
+  const body: K.StatementKind[] = [];
+
+  ctx.onGenerateEnd(() => {
+    function* generateFnBody() {
+      for (const [i, param] of node.params.entries()) {
+        yield* generateDefinitionDest(
+          param.dest,
+          b.identifier(`arg_${i}`),
+          fnScope,
+        );
+      }
+
+      const result = yield* generateStatementList(node.children, fnScope, ctx);
+
+      if (result != null) {
+        yield b.returnStatement(result);
+      }
+    }
+    body.push(...generateFnBody());
+  });
+
   return b.arrowFunctionExpression.from({
     async: true,
     params,
     defaults,
-    body: b.blockStatement([
-      ...(function* generateFnBody() {
-        for (const [i, param] of node.params.entries()) {
-          yield* generateDefinitionDest(
-            param.dest,
-            b.identifier(`arg_${i}`),
-            fnScope,
-          );
-        }
-
-        const result = yield* generateStatementList(node.children, fnScope);
-
-        if (result != null) {
-          yield b.returnStatement(result);
-        }
-      })(),
-    ]),
+    body: b.blockStatement(body),
     expression: false,
     loc: node.loc,
   });
 }
 
-function* generateCall(node: Ast.Call, scope: Scope): CodeGenerator {
-  const callee = yield* generateRef(node.target, scope);
+function* generateCall(
+  node: Ast.Call,
+  scope: Scope,
+  ctx: Context,
+): CodeGenerator {
+  const callee = yield* generateRef(node.target, scope, ctx);
   yield createAssertion("function", callee);
 
   const args: Ref[] = [];
   for (const arg of node.args) {
-    args.push(yield* generateRef(arg, scope));
+    args.push(yield* generateRef(arg, scope, ctx));
   }
 
   return b.awaitExpression(
@@ -284,8 +308,8 @@ function* generateCall(node: Ast.Call, scope: Scope): CodeGenerator {
   );
 }
 
-function* generateIf(node: Ast.If, scope: Scope): CodeGenerator {
-  const test = yield* generateRef(node.cond, scope);
+function* generateIf(node: Ast.If, scope: Scope, ctx: Context): CodeGenerator {
+  const test = yield* generateRef(node.cond, scope, ctx);
   yield createAssertion("boolean", test);
 
   const result = b.identifier(`__if_result_${randId()}__`);
@@ -293,7 +317,10 @@ function* generateIf(node: Ast.If, scope: Scope): CodeGenerator {
     b.variableDeclarator(result, b.literal(null)),
   ]);
 
-  const consequent = createBlock(result, generateStatement(node.then, scope));
+  const consequent = createBlock(
+    result,
+    generateStatement(node.then, scope, ctx),
+  );
 
   const else_ = node.elseif.reduceRight((else_, { cond, then }) => {
     return NODE(
@@ -311,7 +338,7 @@ function* generateIf(node: Ast.If, scope: Scope): CodeGenerator {
 
   let alternate: n.BlockStatement | null = null;
   if (else_) {
-    alternate = createBlock(result, generateStatement(else_, scope));
+    alternate = createBlock(result, generateStatement(else_, scope, ctx));
   }
 
   yield b.ifStatement.from({
@@ -327,13 +354,14 @@ function* generateIf(node: Ast.If, scope: Scope): CodeGenerator {
 function* generateLogicalOperator(
   node: Ast.And | Ast.Or,
   scope: Scope,
+  ctx: Context,
 ): CodeGenerator {
   const result = b.identifier(`__${node.type}_result_${randId()}__`);
 
-  const left = yield* generateExpression(node.left, scope);
+  const left = yield* generateExpression(node.left, scope, ctx);
   yield b.variableDeclaration("let", [b.variableDeclarator(result, left)]);
 
-  const right = createBlock(result, generateExpression(node.right, scope));
+  const right = createBlock(result, generateExpression(node.right, scope, ctx));
   yield b.ifStatement(
     node.type === "or" ? b.unaryExpression("!", result) : result,
     right,

@@ -1,6 +1,7 @@
 import type { Ast } from "@syuilo/aiscript";
 import { builders as b } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
+import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateExpression, generateRef } from "./expression";
 import { callInternal, createThrowError, randId } from "./utils";
@@ -57,6 +58,7 @@ export function* generateAssignDest(
   node: Ast.Expression,
   value: K.ExpressionKind,
   scope: Scope,
+  ctx: Context,
 ): Generator<K.StatementKind, void> {
   switch (node.type) {
     case "identifier": {
@@ -75,15 +77,15 @@ export function* generateAssignDest(
       break;
     }
     case "index": {
-      const target = yield* generateRef(node.target, scope);
-      const index = yield* generateExpression(node.index, scope);
+      const target = yield* generateRef(node.target, scope, ctx);
+      const index = yield* generateExpression(node.index, scope, ctx);
       yield b.expressionStatement(
         callInternal("set_index", [target, index ?? b.literal(null), value]),
       );
       break;
     }
     case "prop": {
-      const target = yield* generateExpression(node.target, scope);
+      const target = yield* generateExpression(node.target, scope, ctx);
       yield b.expressionStatement(
         callInternal("set_prop", [
           target ?? b.literal(null),
@@ -101,7 +103,7 @@ export function* generateAssignDest(
 
       for (const [i, element] of node.value.entries()) {
         const get = callInternal("get_index", [valueRef, b.literal(i)]);
-        yield* generateAssignDest(element, get, scope);
+        yield* generateAssignDest(element, get, scope, ctx);
       }
       break;
     }
@@ -113,7 +115,7 @@ export function* generateAssignDest(
 
       for (const [key, dest] of node.value) {
         const get = callInternal("get_prop", [valueRef, b.literal(key)]);
-        yield* generateAssignDest(dest, get, scope);
+        yield* generateAssignDest(dest, get, scope, ctx);
       }
       break;
     }
