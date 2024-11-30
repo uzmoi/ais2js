@@ -292,7 +292,6 @@ function* generateCall(
   ctx: Context,
 ): CodeGenerator {
   const callee = yield* generateRef(node.target, scope, ctx);
-  yield createAssertion("function", callee);
 
   const args: Ref[] = [];
   for (const arg of node.args) {
@@ -300,11 +299,7 @@ function* generateCall(
   }
 
   return b.awaitExpression(
-    b.callExpression.from({
-      callee,
-      arguments: args,
-      loc: node.loc,
-    }),
+    callInternal("call", [callee, b.arrayExpression(args)]),
   );
 }
 
