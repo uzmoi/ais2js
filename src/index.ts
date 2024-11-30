@@ -3,7 +3,7 @@ import { visitNode } from "@syuilo/aiscript/parser/visit.js";
 import { generate } from "astring";
 import { Context } from "./context";
 import { createProgram } from "./converts";
-import { type AiScriptValue, repr } from "./runtime/internal";
+import { type AiScriptValue, internals } from "./runtime/internal";
 import { Scope } from "./scope";
 
 //         AiScript    ESTree
@@ -13,7 +13,7 @@ const changeOrigin = ({ line, column }: Ast.Pos): Ast.Pos => {
   return { line, column: column - 1 };
 };
 
-export const transform = (source: string): string => {
+export const transform = (source: string, scope: Scope): string => {
   const nodes = Parser.parse(source);
 
   for (const node of nodes) {
@@ -28,27 +28,36 @@ export const transform = (source: string): string => {
   }
 
   const context = new Context();
-  const scope = new Scope(null);
-  scope.define("print");
 
-  const program = createProgram(nodes, scope, context);
+  const program = createProgram(nodes, scope.child(), context);
   context.generateEnd();
 
   return generate(program);
 };
 
 export interface Options {
-  print?: (value: AiScriptValue) => void | Promise<void>;
+  globals?: Map<string, AiScriptValue>;
 }
 
 export const createFunction = (
   source: string,
   options?: Options,
 ): (() => void) => {
-  const fn = Function("{print,__repr}", transform(source));
+  const scope = new Scope(null, new Set(Object.keys(internals)));
 
-  return fn.bind(null, {
-    print: options?.print,
-    __repr: repr,
-  });
+  const globals = { ...internals } as unknown as Record<string, AiScriptValue>;
+
+  if (options?.globals) {
+    for (const [name, value] of options.globals) {
+      const jsName = scope.define(name);
+      globals[jsName] = value;
+    }
+  }
+
+  const fn = Function(
+    `{${[...scope.usedJsNames].join(",")}}`,
+    transform(source, scope),
+  );
+
+  return fn.bind(null, globals);
 };

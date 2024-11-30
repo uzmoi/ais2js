@@ -1,5 +1,6 @@
 import { builders as b, type namedTypes as n } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
+import type { internals } from "../runtime/internal";
 import type { Ref } from "./expression";
 
 export type CodeGenerator = Iterable<K.StatementKind, K.ExpressionKind | null>;
@@ -36,24 +37,14 @@ export const createIife = (body: n.BlockStatement | K.ExpressionKind) =>
 export const createThrowError = (message: K.ExpressionKind) =>
   b.throwStatement(b.newExpression(b.identifier("Error"), [message]));
 
-export type InternalName =
-  | "repr"
-  | "get_prop"
-  | "set_prop"
-  | "get_index"
-  | "set_index"
-  | `assert_${AiScriptTypeName}`;
+type InternalName = keyof typeof internals;
 
 export const callInternal = (name: InternalName, args: K.ExpressionKind[]) =>
-  b.callExpression(b.identifier(`__${name}`), args);
+  b.callExpression(b.identifier(name), args);
 
-type AiScriptTypeName =
-  | "boolean"
-  | "number"
-  | "string"
-  | "array"
-  | "object"
-  | "function";
+type AiScriptTypeName<A = InternalName> = A extends `assert_${infer T}`
+  ? T
+  : never;
 
 export const createAssertion = (type: AiScriptTypeName, ref: Ref) =>
   b.expressionStatement(callInternal(`assert_${type}`, [ref]));

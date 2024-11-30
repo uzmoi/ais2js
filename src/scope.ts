@@ -1,17 +1,28 @@
-import { randId } from "./converts/utils";
-
 interface ScopeEntry {
   jsName: string;
 }
 
 export class Scope {
   private readonly entries = new Map<string, ScopeEntry>();
-  constructor(readonly parent: Scope | null) {}
+  constructor(
+    readonly parent: Scope | null,
+    readonly usedJsNames: Set<string>,
+  ) {}
   child() {
-    return new Scope(this);
+    return new Scope(this, this.usedJsNames);
+  }
+  newId(name: string) {
+    const escapedName = name.replace(/[^0-9A-Za-z]/g, "_");
+    let jsName: string;
+    let count = 0;
+    do {
+      jsName = count++ === 0 ? escapedName : escapedName + count;
+    } while (this.usedJsNames.has(jsName));
+    this.usedJsNames.add(jsName);
+    return jsName;
   }
   define(name: string): string {
-    const jsName = `${name}_${randId()}`;
+    const jsName = this.newId(name);
     this.entries.set(name, { jsName });
     return jsName;
   }
