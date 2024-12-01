@@ -12,6 +12,12 @@ export type AiScriptValue =
       info: AiScriptValue | undefined;
     };
 
+export const error = (name: string, info?: AiScriptValue): AiScriptValue => ({
+  type: "error",
+  name,
+  info,
+});
+
 export type AiScriptValueTypeName =
   | "null"
   | "bool"
@@ -70,6 +76,19 @@ export const assertString: AssertFunction<string> = value => {
 export const assertArray: AssertFunction<AiScriptValue[]> = value => {
   if (!Array.isArray(value)) {
     throw new Error();
+  }
+};
+
+export const assertArrayOf: <T extends AiScriptValue>(
+  value: AiScriptValue,
+  assert: (value: AiScriptValue) => asserts value is T,
+) => asserts value is T[] = <T extends AiScriptValue>(
+  value: AiScriptValue,
+  assert: (value: AiScriptValue) => asserts value is T,
+) => {
+  assertArray(value);
+  for (const element of value) {
+    assert(element);
   }
 };
 
