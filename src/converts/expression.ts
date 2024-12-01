@@ -228,15 +228,19 @@ function* generateObject(
   scope: Scope,
   ctx: Context,
 ): CodeGenerator {
-  const properties: n.Property[] = [];
+  const properties: n.ArrayExpression[] = [];
   for (const [key, value] of node.value) {
     properties.push(
-      b.property("init", b.literal(key), yield* generateRef(value, scope, ctx)),
+      b.arrayExpression([
+        b.literal(key),
+        yield* generateRef(value, scope, ctx),
+      ]),
     );
   }
 
-  return b.objectExpression.from({
-    properties,
+  return b.newExpression.from({
+    callee: b.identifier("Map"),
+    arguments: [b.arrayExpression(properties)],
     loc: node.loc,
   });
 }
