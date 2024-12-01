@@ -13,7 +13,6 @@ import {
   createBlock,
   createIife,
   createThrowError,
-  randId,
 } from "./utils";
 
 export type Ref = n.Identifier | n.Literal;
@@ -39,7 +38,7 @@ export function* generateRef(
     return result;
   }
 
-  const identifier = b.identifier(`__ref_${randId()}__`);
+  const identifier = b.identifier(scope.newId("__ref__"));
 
   yield b.variableDeclaration("const", [
     b.variableDeclarator(identifier, result),
@@ -183,7 +182,7 @@ function* generateTmpl(
   scope: Scope,
   ctx: Context,
 ): CodeGenerator {
-  const result = b.identifier(`__tmpl_${randId()}__`);
+  const result = b.identifier(scope.newId("__tmpl__"));
   yield b.variableDeclaration("let", [
     b.variableDeclarator(result, b.literal("")),
   ]);
@@ -311,7 +310,7 @@ function* generateIf(node: Ast.If, scope: Scope, ctx: Context): CodeGenerator {
   const test = yield* generateRef(node.cond, scope, ctx);
   yield createAssertion("boolean", test);
 
-  const result = b.identifier(`__if_result_${randId()}__`);
+  const result = b.identifier(scope.newId("__if_result__"));
   yield b.variableDeclaration("let", [
     b.variableDeclarator(result, b.literal(null)),
   ]);
@@ -355,7 +354,7 @@ function* generateLogicalOperator(
   scope: Scope,
   ctx: Context,
 ): CodeGenerator {
-  const result = b.identifier(`__${node.type}_result_${randId()}__`);
+  const result = b.identifier(scope.newId(`__${node.type}_result__`));
 
   const left = yield* generateExpression(node.left, scope, ctx);
   yield b.variableDeclaration("let", [b.variableDeclarator(result, left)]);

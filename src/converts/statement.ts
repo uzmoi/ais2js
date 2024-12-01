@@ -10,7 +10,6 @@ import {
   callInternal,
   createAssertion,
   createThrowError,
-  randId,
 } from "./utils";
 
 export function* generateStatementList(
@@ -29,7 +28,7 @@ export function* generateStatementList(
   if (last) {
     const expression = yield* generateStatement(last, scope, ctx);
     if (expression != null) {
-      const result = b.identifier(`__run_result_${randId()}__`);
+      const result = b.identifier(scope.newId("__run_result__"));
       yield b.variableDeclaration("const", [
         b.variableDeclarator(result, expression),
       ]);
@@ -170,7 +169,7 @@ function* generateEach(
   const items = yield* generateRef(node.items, scope, ctx);
   yield createAssertion("array", items);
 
-  const element = b.identifier(`__each_element_${randId()}__`);
+  const element = b.identifier(scope.newId("__each_element__"));
 
   const eachScope = scope.child();
 
@@ -194,7 +193,7 @@ function* generateFor(
     const times = yield* generateRef(node.times, scope, ctx);
     yield createAssertion("number", times);
 
-    const index = b.identifier(`__for_index_${randId()}__`);
+    const index = b.identifier(scope.newId("__for_index__"));
 
     yield b.forStatement.from({
       init: b.variableDeclaration("let", [

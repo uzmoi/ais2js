@@ -4,7 +4,7 @@ import type * as K from "ast-types/gen/kinds";
 import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateExpression, generateRef } from "./expression";
-import { callInternal, createThrowError, randId } from "./utils";
+import { callInternal, createThrowError } from "./utils";
 
 export function* generateDefinitionDest(
   node: Ast.Expression,
@@ -24,7 +24,7 @@ export function* generateDefinitionDest(
       break;
     }
     case "arr": {
-      const initRef = b.identifier(`__${randId()}__`);
+      const initRef = b.identifier(scope.newId("__dest__"));
       yield b.variableDeclaration("const", [
         b.variableDeclarator(initRef, init),
       ]);
@@ -37,7 +37,7 @@ export function* generateDefinitionDest(
       break;
     }
     case "obj": {
-      const initRef = b.identifier(`__${randId()}__`);
+      const initRef = b.identifier(scope.newId("__dest__"));
       yield b.variableDeclaration("const", [
         b.variableDeclarator(initRef, init),
       ]);
@@ -96,7 +96,7 @@ export function* generateAssignDest(
       break;
     }
     case "arr": {
-      const valueRef = b.identifier(`__${randId()}__`);
+      const valueRef = b.identifier(scope.newId("__dest__"));
       yield b.variableDeclaration("const", [
         b.variableDeclarator(valueRef, value),
       ]);
@@ -108,7 +108,7 @@ export function* generateAssignDest(
       break;
     }
     case "obj": {
-      const valueRef = b.identifier(`__${randId()}__`);
+      const valueRef = b.identifier(scope.newId("__dest__"));
       yield b.variableDeclaration("const", [
         b.variableDeclarator(valueRef, value),
       ]);
