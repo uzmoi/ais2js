@@ -227,9 +227,7 @@ a / b;
 `;
 
 exports[`operators > binary > eq 1`] = `
-"assert_number(a);
-assert_number(b);
-a === b;
+"a === b;
 "
 `;
 
@@ -269,9 +267,7 @@ a * b;
 `;
 
 exports[`operators > binary > neq 1`] = `
-"assert_number(a);
-assert_number(b);
-a !== b;
+"a !== b;
 "
 `;
 

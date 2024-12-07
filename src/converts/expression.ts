@@ -134,8 +134,10 @@ export function* generateExpression(
     case "neq": {
       const left = yield* generateRef(node.left, scope, ctx);
       const right = yield* generateRef(node.right, scope, ctx);
-      yield createAssertion("number", left);
-      yield createAssertion("number", right);
+      if (node.type !== "eq" && node.type !== "neq") {
+        yield createAssertion("number", left);
+        yield createAssertion("number", right);
+      }
       return b.binaryExpression.from({
         operator: binaryOperatorsMap[node.type],
         left,
