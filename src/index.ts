@@ -35,6 +35,24 @@ export const transform = (source: string, scope: Scope): string => {
   return generate(program);
 };
 
+export const createGlobalScope = (globalsMap?: Map<string, AiScriptValue>) => {
+  const scope = Scope.createRoot();
+
+  const globals = Object.fromEntries(internals) as unknown as Record<
+    string,
+    AiScriptValue
+  >;
+
+  if (globalsMap) {
+    for (const [name, value] of globalsMap) {
+      const jsName = scope.define(name, { mutable: false });
+      globals[jsName] = value;
+    }
+  }
+
+  return [scope, globals] as const;
+};
+
 export interface Options {
   globals?: Map<string, AiScriptValue>;
 }
@@ -43,16 +61,7 @@ export const createFunction = (
   source: string,
   options?: Options,
 ): (() => void) => {
-  const scope = new Scope(null, new Set(Object.keys(internals)));
-
-  const globals = { ...internals } as unknown as Record<string, AiScriptValue>;
-
-  if (options?.globals) {
-    for (const [name, value] of options.globals) {
-      const jsName = scope.define(name);
-      globals[jsName] = value;
-    }
-  }
+  const [scope, globals] = createGlobalScope(options?.globals);
 
   const fn = Function(
     `{${[...scope.usedJsNames].join(",")}}`,

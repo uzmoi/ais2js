@@ -34,7 +34,9 @@ export const createIife = (body: n.BlockStatement | K.ExpressionKind) =>
 export const createThrowError = (message: K.ExpressionKind) =>
   b.throwStatement(b.newExpression(b.identifier("Error"), [message]));
 
-type InternalName = keyof typeof internals;
+type InternalName = typeof internals extends ReadonlyMap<infer T, unknown>
+  ? T
+  : never;
 
 export const callInternal = (name: InternalName, args: K.ExpressionKind[]) =>
   b.callExpression(b.identifier(name), args);
