@@ -1,10 +1,15 @@
+import { internals } from "./runtime/internal";
+
 interface ScopeEntry {
   jsName: string;
 }
 
 export class Scope {
+  static createRoot() {
+    return new Scope(null, new Set(internals.keys()));
+  }
   private readonly entries = new Map<string, ScopeEntry>();
-  constructor(
+  private constructor(
     readonly parent: Scope | null,
     readonly usedJsNames: Set<string>,
   ) {}

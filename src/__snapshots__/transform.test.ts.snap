@@ -1,0 +1,369 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`accessors > index 1`] = `
+"get_index(target, index);
+"
+`;
+
+exports[`accessors > prop 1`] = `
+"get_prop(target, "prop");
+"
+`;
+
+exports[`assignment > dest 1`] = `
+"const __dest__ = a;
+const __dest__2 = get_index(__dest__, 0);
+b = get_prop(__dest__2, "identifier");
+set_prop(b, "c", get_prop(__dest__2, "prop"));
+set_index(b, c, get_prop(__dest__2, "index"));
+"
+`;
+
+exports[`assignment > identifier 1`] = `
+"a = 1;
+a += 2;
+a -= 3;
+"
+`;
+
+exports[`assignment > index 1`] = `
+"set_index(a, b, 1);
+set_index(a, b, get_index(a, b) + 2);
+set_index(a, b, get_index(a, b) - 3);
+"
+`;
+
+exports[`assignment > prop 1`] = `
+"set_prop(a, "b", 1);
+set_prop(a, "b", get_prop(a, "b") + 2);
+set_prop(a, "b", get_prop(a, "b") - 3);
+"
+`;
+
+exports[`flow > each 1`] = `
+"assert_array(xs);
+for (const __each_element__ of xs) {
+  const x = __each_element__;
+  const __run_result__ = x;
+}
+"
+`;
+
+exports[`flow > eval 1`] = `
+"const a = 0;
+const a2 = 1;
+const __run_result__ = a2;
+const b = __run_result__;
+"
+`;
+
+exports[`flow > for 1`] = `
+"const __ref__ = 10;
+assert_number(__ref__);
+for (let __for_index__ = 0; __for_index__ < __ref__; __for_index__++) {
+  continue;
+}
+"
+`;
+
+exports[`flow > for-i 1`] = `
+"const __ref__ = 0;
+const __ref__2 = 10;
+assert_number(__ref__);
+assert_number(__ref__2);
+for (let i = __ref__; i < __ref__ + __ref__2; i++) {
+  const __run_result__ = i;
+}
+"
+`;
+
+exports[`flow > if 1`] = `
+"assert_boolean(cond);
+let __if_result__ = null;
+if (cond) {
+  __if_result__ = 1;
+} else {
+  assert_boolean(cond);
+  let __if_result__2 = null;
+  if (cond) {
+    __if_result__2 = 2;
+  } else {
+    __if_result__2 = 3;
+  }
+  __if_result__ = __if_result__2;
+}
+__if_result__;
+"
+`;
+
+exports[`flow > loop 1`] = `
+"while (true) {
+  break;
+}
+"
+`;
+
+exports[`fn > arguments > default 1`] = `
+"const __ref__ = 0;
+const hoge = async arg_0 => {
+  const arg = arg_0;
+};
+"
+`;
+
+exports[`fn > arguments > dest 1`] = `
+"const hoge = async arg_0 => {
+  const __dest__ = arg_0;
+  const __dest__2 = get_prop(__dest__, "fuga");
+  const piyo = get_index(__dest__2, 0);
+  const __run_result__ = piyo;
+  return __run_result__;
+};
+"
+`;
+
+exports[`fn > arguments > reference 1`] = `
+"const identify = async arg_0 => {
+  const value = arg_0;
+  const __run_result__ = value;
+  return __run_result__;
+};
+"
+`;
+
+exports[`fn > call 1`] = `
+"await call(f, []);
+"
+`;
+
+exports[`fn > implicit return 1`] = `
+"const hoge = async () => {
+  const __run_result__ = 0;
+  return __run_result__;
+};
+"
+`;
+
+exports[`fn > noop fn 1`] = `
+"const noop = async () => {};
+"
+`;
+
+exports[`fn > return 1`] = `
+"const hoge = async () => {
+  return 0;
+};
+"
+`;
+
+exports[`literals > array 1`] = `
+"const __ref__ = 0;
+const __ref__2 = 1;
+const __ref__3 = 2;
+const __ref__4 = 3;
+[__ref__, __ref__2, __ref__3, __ref__4];
+"
+`;
+
+exports[`literals > boolean 1`] = `
+"true;
+false;
+"
+`;
+
+exports[`literals > null 1`] = `
+"null;
+"
+`;
+
+exports[`literals > number 1`] = `
+"0;
+6.28;
+1024;
+"
+`;
+
+exports[`literals > object 1`] = `
+"const __ref__ = 0;
+const __ref__2 = 1;
+new Map([["a", __ref__], ["b", __ref__2]]);
+"
+`;
+
+exports[`literals > string 1`] = `
+""hoge";
+"
+`;
+
+exports[`literals > tmpl 1`] = `
+"let __tmpl__ = "";
+__tmpl__ += repr("Hello ");
+__tmpl__ += repr(name);
+__tmpl__ += repr("!");
+__tmpl__;
+"
+`;
+
+exports[`namespace > reference 1`] = `
+"const Foo_Foo_hoge = 0;
+const Foo_hoge = Foo_Foo_hoge;
+await call(print, [Foo_hoge]);
+await call(print, [Foo_Foo_hoge]);
+"
+`;
+
+exports[`operators > binary > add 1`] = `
+"assert_number(a);
+assert_number(b);
+a + b;
+"
+`;
+
+exports[`operators > binary > div 1`] = `
+"assert_number(a);
+assert_number(b);
+a / b;
+"
+`;
+
+exports[`operators > binary > eq 1`] = `
+"assert_number(a);
+assert_number(b);
+a === b;
+"
+`;
+
+exports[`operators > binary > gt 1`] = `
+"assert_number(a);
+assert_number(b);
+a > b;
+"
+`;
+
+exports[`operators > binary > gteq 1`] = `
+"assert_number(a);
+assert_number(b);
+a >= b;
+"
+`;
+
+exports[`operators > binary > lt 1`] = `
+"assert_number(a);
+assert_number(b);
+a < b;
+"
+`;
+
+exports[`operators > binary > lteq 1`] = `
+"assert_number(a);
+assert_number(b);
+a <= b;
+"
+`;
+
+exports[`operators > binary > mul 1`] = `
+"assert_number(a);
+assert_number(b);
+a * b;
+"
+`;
+
+exports[`operators > binary > neq 1`] = `
+"assert_number(a);
+assert_number(b);
+a !== b;
+"
+`;
+
+exports[`operators > binary > pow 1`] = `
+"assert_number(a);
+assert_number(b);
+a ** b;
+"
+`;
+
+exports[`operators > binary > rem 1`] = `
+"assert_number(a);
+assert_number(b);
+a % b;
+"
+`;
+
+exports[`operators > binary > sub 1`] = `
+"assert_number(a);
+assert_number(b);
+a - b;
+"
+`;
+
+exports[`operators > logic > and 1`] = `
+"let __and_result__ = a;
+if (__and_result__) {
+  const __ref__ = get_prop(b, "c");
+  __and_result__ = await call(__ref__, []);
+}
+__and_result__;
+"
+`;
+
+exports[`operators > logic > or 1`] = `
+"let __or_result__ = a;
+if (!__or_result__) {
+  const __ref__ = get_prop(b, "c");
+  __or_result__ = await call(__ref__, []);
+}
+__or_result__;
+"
+`;
+
+exports[`operators > unary > minus 1`] = `
+"assert_number(a);
+-a;
+"
+`;
+
+exports[`operators > unary > not 1`] = `
+"assert_boolean(a);
+!a;
+"
+`;
+
+exports[`operators > unary > plus 1`] = `
+"assert_number(a);
++a;
+"
+`;
+
+exports[`variables > let 1`] = `
+"const hoge = 0;
+hoge;
+"
+`;
+
+exports[`variables > let dest 1`] = `
+"const __dest__ = a;
+const __dest__2 = get_prop(__dest__, "values");
+const hoge = get_index(__dest__2, 0);
+const fuga = get_index(__dest__2, 1);
+hoge;
+fuga;
+"
+`;
+
+exports[`variables > reference 1`] = `
+"hoge;
+"
+`;
+
+exports[`variables > undefined 1`] = `
+"(() => {
+  throw new Error("Undefined variable: hoge");
+})();
+"
+`;
+
+exports[`variables > var 1`] = `
+"let hoge = 0;
+hoge;
+"
+`;
