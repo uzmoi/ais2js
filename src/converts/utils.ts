@@ -3,7 +3,7 @@ import type * as K from "ast-types/gen/kinds";
 import type { internals } from "../runtime/internal";
 import type { Ref } from "./expression";
 
-export type CodeGenerator = Iterable<K.StatementKind, K.ExpressionKind | null>;
+export type CodeGenerator = Generator<K.StatementKind, K.ExpressionKind | null>;
 
 function* flatResult<T, R extends {}>(
   generator: Iterable<T, R | null | undefined>,

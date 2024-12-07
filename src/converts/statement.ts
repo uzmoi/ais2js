@@ -45,14 +45,11 @@ export function* generateStatement(
   ctx: Context,
 ): CodeGenerator {
   switch (node.type) {
-    case "def":
-      yield* generateDefinitionDest(
-        node.dest,
-        (yield* generateExpression(node.expr, scope, ctx)) ?? b.literal(null),
-        scope,
-        node.mut,
-      );
+    case "def": {
+      const init = yield* generateExpression(node.expr, scope, ctx);
+      yield* generateDefinitionDest(node.dest, init, scope, node.mut);
       break;
+    }
     case "assign":
     case "addAssign":
     case "subAssign":
@@ -98,8 +95,7 @@ function* generateAssign(
   scope: Scope,
   ctx: Context,
 ): Generator<K.StatementKind, void> {
-  const right =
-    (yield* generateExpression(node.expr, scope, ctx)) ?? b.literal(null);
+  const right = yield* generateExpression(node.expr, scope, ctx);
 
   if (node.type === "assign") {
     yield* generateAssignDest(node.dest, right, scope, ctx);

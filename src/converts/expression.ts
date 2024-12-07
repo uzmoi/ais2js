@@ -7,13 +7,14 @@ import type { Scope } from "../scope";
 import { generateDefinitionDest } from "./dest";
 import { generateStatement, generateStatementList } from "./statement";
 import {
-  type CodeGenerator,
   callInternal,
   createAssertion,
   createBlock,
   createIife,
   createThrowError,
 } from "./utils";
+
+type CodeGenerator = Generator<K.StatementKind, K.ExpressionKind>;
 
 export type Ref = n.Identifier | n.Literal;
 
@@ -23,9 +24,6 @@ export function* generateRef(
   ctx: Context,
 ): Generator<K.StatementKind, Ref> {
   const result = yield* generateExpression(node, scope, ctx);
-  if (result == null) {
-    return b.literal(null);
-  }
 
   if (n.Identifier.check(result)) {
     return result;
@@ -77,7 +75,12 @@ export function* generateExpression(
       throw new Error("Not implemented yet.");
     }
     case "block": {
-      return yield* generateStatementList(node.statements, scope.child(), ctx);
+      const result = yield* generateStatementList(
+        node.statements,
+        scope.child(),
+        ctx,
+      );
+      return result ?? b.literal(null);
     }
     case "fn":
       return yield* generateFn(node, scope, ctx);
@@ -148,14 +151,11 @@ export function* generateExpression(
     case "index": {
       const target = yield* generateRef(node.target, scope, ctx);
       const index = yield* generateExpression(node.index, scope, ctx);
-      return callInternal("get_index", [target, index ?? b.literal(null)]);
+      return callInternal("get_index", [target, index]);
     }
     case "prop": {
       const target = yield* generateExpression(node.target, scope, ctx);
-      return callInternal("get_prop", [
-        target ?? b.literal(null),
-        b.literal(node.name),
-      ]);
+      return callInternal("get_prop", [target, b.literal(node.name)]);
     }
     default:
       throw new Error(
@@ -192,11 +192,7 @@ function* generateTmpl(
   for (const templateElement of node.tmpl) {
     const expression = yield* generateExpression(templateElement, scope, ctx);
     yield b.expressionStatement(
-      b.assignmentExpression(
-        "+=",
-        result,
-        callInternal("repr", [expression ?? b.literal(null)]),
-      ),
+      b.assignmentExpression("+=", result, callInternal("repr", [expression])),
     );
   }
 
