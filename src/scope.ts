@@ -8,13 +8,16 @@ export class Scope {
   static createRoot() {
     return new Scope(null, new Set(internals.keys()));
   }
-  private readonly entries = new Map<string, ScopeEntry>();
-  private constructor(
-    readonly parent: Scope | null,
+  protected readonly entries = new Map<string, ScopeEntry>();
+  protected constructor(
+    protected readonly parent: Scope | null,
     readonly usedJsNames: Set<string>,
   ) {}
   child() {
     return new Scope(this, this.usedJsNames);
+  }
+  ns(name: string) {
+    return new NamespaceScope(this, this.usedJsNames, name);
   }
   newId(name: string) {
     const escapedName = name.replace(/[^0-9A-Za-z]/g, "_");
@@ -38,5 +41,22 @@ export class Scope {
     }
 
     return this.parent?.ref(name);
+  }
+}
+
+class NamespaceScope extends Scope {
+  constructor(
+    parent: Scope | null,
+    usedJsNames: Set<string>,
+    private readonly nsName: string,
+  ) {
+    super(parent, usedJsNames);
+  }
+  override define(name: string): string {
+    const jsName = this.parent!.define(`${this.nsName}:${name}`, {
+      mutable: true,
+    });
+    this.entries.set(name, { jsName, mutable: true });
+    return jsName;
   }
 }
