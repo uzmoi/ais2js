@@ -60,12 +60,12 @@ export interface Options {
 export const createFunction = (
   source: string,
   options?: Options,
-): (() => void) => {
+): (() => Promise<void>) => {
   const [scope, globals] = createGlobalScope(options?.globals);
 
   const fn = Function(
     `{${[...scope.usedJsNames].join(",")}}`,
-    transform(source, scope),
+    `return((async()=>{"use strict";${transform(source, scope)}})())`,
   );
 
   return fn.bind(null, globals);
