@@ -163,7 +163,7 @@ function* generateEach(
   ctx: Context,
 ): Generator<K.StatementKind, void> {
   const items = yield* generateRef(node.items, scope, ctx);
-  yield createAssertion("array", items);
+  yield createAssertion("array", items, node.items);
 
   const element = b.identifier(scope.newId("__each_element__"));
 
@@ -187,7 +187,7 @@ function* generateFor(
 ): Generator<K.StatementKind, void> {
   if (node.times) {
     const times = yield* generateRef(node.times, scope, ctx);
-    yield createAssertion("number", times);
+    yield createAssertion("number", times, node.times);
 
     const index = b.identifier(scope.newId("__for_index__"));
 
@@ -203,8 +203,8 @@ function* generateFor(
     const from = yield* generateRef(node.from!, scope, ctx);
     const to = yield* generateRef(node.to!, scope, ctx);
 
-    yield createAssertion("number", from);
-    yield createAssertion("number", to);
+    yield createAssertion("number", from, node.from!);
+    yield createAssertion("number", to, node.to!);
 
     const forScope = scope.child();
     const jsName = forScope.define(node.var!);

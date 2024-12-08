@@ -12,6 +12,7 @@ import {
   createBlock,
   createIife,
   createThrowError,
+  loc,
 } from "./utils";
 
 type CodeGenerator = Generator<K.StatementKind, K.ExpressionKind>;
@@ -107,7 +108,7 @@ export function* generateExpression(
     case "plus":
     case "minus": {
       const expression = yield* generateRef(node.expr, scope, ctx);
-      yield createAssertion("number", expression);
+      yield createAssertion("number", expression, node.expr);
       return b.unaryExpression.from({
         operator: node.type === "plus" ? "+" : "-",
         argument: expression,
@@ -116,7 +117,7 @@ export function* generateExpression(
     }
     case "not": {
       const expression = yield* generateRef(node.expr, scope, ctx);
-      yield createAssertion("boolean", expression);
+      yield createAssertion("boolean", expression, node.expr);
       return b.unaryExpression.from({
         operator: "!",
         argument: expression,
@@ -138,8 +139,8 @@ export function* generateExpression(
       const left = yield* generateRef(node.left, scope, ctx);
       const right = yield* generateRef(node.right, scope, ctx);
       if (node.type !== "eq" && node.type !== "neq") {
-        yield createAssertion("number", left);
-        yield createAssertion("number", right);
+        yield createAssertion("number", left, node.left);
+        yield createAssertion("number", right, node.right);
       }
       return b.binaryExpression.from({
         operator: binaryOperatorsMap[node.type],
@@ -151,11 +152,12 @@ export function* generateExpression(
     case "index": {
       const target = yield* generateRef(node.target, scope, ctx);
       const index = yield* generateExpression(node.index, scope, ctx);
-      return callInternal("get_index", [target, index]);
+      return callInternal("get_index", [target, index, loc(node)]);
     }
     case "prop": {
       const target = yield* generateExpression(node.target, scope, ctx);
-      return callInternal("get_prop", [target, b.literal(node.name)]);
+      const name = b.literal(node.name);
+      return callInternal("get_prop", [target, name, loc(node)]);
     }
     default:
       throw new Error(
@@ -300,13 +302,13 @@ function* generateCall(
   }
 
   return b.awaitExpression(
-    callInternal("call", [callee, b.arrayExpression(args)]),
+    callInternal("call", [callee, b.arrayExpression(args), loc(node)]),
   );
 }
 
 function* generateIf(node: Ast.If, scope: Scope, ctx: Context): CodeGenerator {
   const test = yield* generateRef(node.cond, scope, ctx);
-  yield createAssertion("boolean", test);
+  yield createAssertion("boolean", test, node.cond);
 
   const result = b.identifier(scope.newId("__if_result__"));
   yield b.variableDeclaration("let", [

@@ -1,21 +1,21 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`accessors > index 1`] = `
-"get_index(target, index);
+"get_index(target, index, [1, 6]);
 "
 `;
 
 exports[`accessors > prop 1`] = `
-"get_prop(target, "prop");
+"get_prop(target, "prop", [1, 6]);
 "
 `;
 
 exports[`assignment > dest 1`] = `
 "const __dest__ = a;
-const __dest__2 = get_index(__dest__, 0);
-b = get_prop(__dest__2, "identifier");
-set_prop(b, "c", get_prop(__dest__2, "prop"));
-set_index(b, c, get_prop(__dest__2, "index"));
+const __dest__2 = get_index(__dest__, 0, [2, 7]);
+b = get_prop(__dest__2, "identifier", [2, 21]);
+set_prop(b, "c", get_prop(__dest__2, "prop", [2, 31]), [2, 31]);
+set_index(b, c, get_prop(__dest__2, "index", [2, 43]), [2, 43]);
 "
 `;
 
@@ -27,21 +27,21 @@ a -= 3;
 `;
 
 exports[`assignment > index 1`] = `
-"set_index(a, b, 1);
+"set_index(a, b, 1, [2, 7]);
 set_index(a, b, get_index(a, b) + 2);
 set_index(a, b, get_index(a, b) - 3);
 "
 `;
 
 exports[`assignment > prop 1`] = `
-"set_prop(a, "b", 1);
+"set_prop(a, "b", 1, [2, 7]);
 set_prop(a, "b", get_prop(a, "b") + 2);
 set_prop(a, "b", get_prop(a, "b") - 3);
 "
 `;
 
 exports[`flow > each 1`] = `
-"assert_array(xs);
+"assert_array(xs, [1, 13]);
 for (const __each_element__ of xs) {
   const x = __each_element__;
   const __run_result__ = x;
@@ -59,7 +59,7 @@ const b = __run_result__;
 
 exports[`flow > for 1`] = `
 "const __ref__ = 10;
-assert_number(__ref__);
+assert_number(__ref__, [1, 4]);
 for (let __for_index__ = 0; __for_index__ < __ref__; __for_index__++) {
   continue;
 }
@@ -69,8 +69,8 @@ for (let __for_index__ = 0; __for_index__ < __ref__; __for_index__++) {
 exports[`flow > for-i 1`] = `
 "const __ref__ = 0;
 const __ref__2 = 10;
-assert_number(__ref__);
-assert_number(__ref__2);
+assert_number(__ref__, [1, 9]);
+assert_number(__ref__2, [1, 12]);
 for (let i = __ref__; i < __ref__ + __ref__2; i++) {
   const __run_result__ = i;
 }
@@ -78,12 +78,12 @@ for (let i = __ref__; i < __ref__ + __ref__2; i++) {
 `;
 
 exports[`flow > if 1`] = `
-"assert_boolean(cond);
+"assert_boolean(cond, [2, 9]);
 let __if_result__ = null;
 if (cond) {
   __if_result__ = 1;
 } else {
-  assert_boolean(cond);
+  assert_boolean(cond, [2, 21]);
   let __if_result__2 = null;
   if (cond) {
     __if_result__2 = 2;
@@ -114,8 +114,8 @@ const hoge = async arg_0 => {
 exports[`fn > arguments > dest 1`] = `
 "const hoge = async arg_0 => {
   const __dest__ = arg_0;
-  const __dest__2 = get_prop(__dest__, "fuga");
-  const piyo = get_index(__dest__2, 0);
+  const __dest__2 = get_prop(__dest__, "fuga", [1, 15]);
+  const piyo = get_index(__dest__2, 0, [1, 16]);
   const __run_result__ = piyo;
   return __run_result__;
 };
@@ -132,7 +132,7 @@ exports[`fn > arguments > reference 1`] = `
 `;
 
 exports[`fn > call 1`] = `
-"await call(f, []);
+"await call(f, [], [1, 1]);
 "
 `;
 
@@ -207,21 +207,21 @@ __tmpl__;
 exports[`namespace > reference 1`] = `
 "const Foo_Foo_hoge = 0;
 const Foo_hoge = Foo_Foo_hoge;
-await call(print, [Foo_hoge]);
-await call(print, [Foo_Foo_hoge]);
+await call(print, [Foo_hoge], [2, 6]);
+await call(print, [Foo_Foo_hoge], [3, 6]);
 "
 `;
 
 exports[`operators > binary > add 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a + b;
 "
 `;
 
 exports[`operators > binary > div 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a / b;
 "
 `;
@@ -232,36 +232,36 @@ exports[`operators > binary > eq 1`] = `
 `;
 
 exports[`operators > binary > gt 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a > b;
 "
 `;
 
 exports[`operators > binary > gteq 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 5]);
 a >= b;
 "
 `;
 
 exports[`operators > binary > lt 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a < b;
 "
 `;
 
 exports[`operators > binary > lteq 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 5]);
 a <= b;
 "
 `;
 
 exports[`operators > binary > mul 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a * b;
 "
 `;
@@ -272,22 +272,22 @@ exports[`operators > binary > neq 1`] = `
 `;
 
 exports[`operators > binary > pow 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a ** b;
 "
 `;
 
 exports[`operators > binary > rem 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a % b;
 "
 `;
 
 exports[`operators > binary > sub 1`] = `
-"assert_number(a);
-assert_number(b);
+"assert_number(a, [1, 0]);
+assert_number(b, [1, 4]);
 a - b;
 "
 `;
@@ -295,8 +295,8 @@ a - b;
 exports[`operators > logic > and 1`] = `
 "let __and_result__ = a;
 if (__and_result__) {
-  const __ref__ = get_prop(b, "c");
-  __and_result__ = await call(__ref__, []);
+  const __ref__ = get_prop(b, "c", [1, 6]);
+  __and_result__ = await call(__ref__, [], [1, 8]);
 }
 __and_result__;
 "
@@ -305,27 +305,27 @@ __and_result__;
 exports[`operators > logic > or 1`] = `
 "let __or_result__ = a;
 if (!__or_result__) {
-  const __ref__ = get_prop(b, "c");
-  __or_result__ = await call(__ref__, []);
+  const __ref__ = get_prop(b, "c", [1, 6]);
+  __or_result__ = await call(__ref__, [], [1, 8]);
 }
 __or_result__;
 "
 `;
 
 exports[`operators > unary > minus 1`] = `
-"assert_number(a);
+"assert_number(a, [1, 1]);
 -a;
 "
 `;
 
 exports[`operators > unary > not 1`] = `
-"assert_boolean(a);
+"assert_boolean(a, [1, 1]);
 !a;
 "
 `;
 
 exports[`operators > unary > plus 1`] = `
-"assert_number(a);
+"assert_number(a, [1, 1]);
 +a;
 "
 `;
@@ -338,9 +338,9 @@ hoge;
 
 exports[`variables > let dest 1`] = `
 "const __dest__ = a;
-const __dest__2 = get_prop(__dest__, "values");
-const hoge = get_index(__dest__2, 0);
-const fuga = get_index(__dest__2, 1);
+const __dest__2 = get_prop(__dest__, "values", [2, 21]);
+const hoge = get_index(__dest__2, 0, [2, 22]);
+const fuga = get_index(__dest__2, 1, [2, 28]);
 hoge;
 fuga;
 "

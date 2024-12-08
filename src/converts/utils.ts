@@ -1,3 +1,4 @@
+import type { Ast } from "@syuilo/aiscript";
 import { builders as b, type namedTypes as n } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
 import type { internals } from "../runtime/internal";
@@ -45,5 +46,35 @@ type AiScriptTypeName<A = InternalName> = A extends `assert_${infer T}`
   ? T
   : never;
 
-export const createAssertion = (type: AiScriptTypeName, ref: Ref) =>
-  b.expressionStatement(callInternal(`assert_${type}`, [ref]));
+export const createAssertion = (
+  type: AiScriptTypeName,
+  ref: Ref,
+  node: { loc: Ast.Loc },
+) => b.expressionStatement(callInternal(`assert_${type}`, [ref, loc(node)]));
+
+type Literal =
+  | null
+  | boolean
+  | number
+  | string
+  | Literal[]
+  | { [k: string]: Literal };
+
+export const literal = (value: Literal): K.ExpressionKind => {
+  if (Array.isArray(value)) {
+    return b.arrayExpression(value.map(literal));
+  }
+
+  if (value != null && typeof value === "object") {
+    return b.objectExpression(
+      Object.entries(value).map(([key, value]) =>
+        b.property("init", b.identifier(key), literal(value)),
+      ),
+    );
+  }
+
+  return b.literal(value);
+};
+
+export const loc = ({ loc }: { loc: Ast.Loc }) =>
+  literal([loc.start.line, loc.start.column]);

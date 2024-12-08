@@ -4,7 +4,7 @@ import type * as K from "ast-types/gen/kinds";
 import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateExpression, generateRef } from "./expression";
-import { callInternal, createThrowError } from "./utils";
+import { callInternal, createThrowError, loc } from "./utils";
 
 export function* generateDefinitionDest(
   node: Ast.Expression,
@@ -30,7 +30,11 @@ export function* generateDefinitionDest(
       ]);
 
       for (const [i, element] of node.value.entries()) {
-        const get = callInternal("get_index", [initRef, b.literal(i)]);
+        const get = callInternal("get_index", [
+          initRef,
+          b.literal(i),
+          loc(element),
+        ]);
         yield* generateDefinitionDest(element, get, scope, mut);
       }
 
@@ -43,7 +47,11 @@ export function* generateDefinitionDest(
       ]);
 
       for (const [key, value] of node.value) {
-        const get = callInternal("get_prop", [initRef, b.literal(key)]);
+        const get = callInternal("get_prop", [
+          initRef,
+          b.literal(key),
+          loc(value), // FIXME: keyのlocを使う
+        ]);
         yield* generateDefinitionDest(value, get, scope, mut);
       }
 
@@ -80,18 +88,15 @@ export function* generateAssignDest(
       const target = yield* generateRef(node.target, scope, ctx);
       const index = yield* generateExpression(node.index, scope, ctx);
       yield b.expressionStatement(
-        callInternal("set_index", [target, index ?? b.literal(null), value]),
+        callInternal("set_index", [target, index, value, loc(node)]),
       );
       break;
     }
     case "prop": {
       const target = yield* generateExpression(node.target, scope, ctx);
+      const name = b.literal(node.name);
       yield b.expressionStatement(
-        callInternal("set_prop", [
-          target ?? b.literal(null),
-          b.literal(node.name),
-          value,
-        ]),
+        callInternal("set_prop", [target, name, value, loc(node)]),
       );
       break;
     }
@@ -102,7 +107,11 @@ export function* generateAssignDest(
       ]);
 
       for (const [i, element] of node.value.entries()) {
-        const get = callInternal("get_index", [valueRef, b.literal(i)]);
+        const get = callInternal("get_index", [
+          valueRef,
+          b.literal(i),
+          loc(element),
+        ]);
         yield* generateAssignDest(element, get, scope, ctx);
       }
       break;
@@ -114,7 +123,11 @@ export function* generateAssignDest(
       ]);
 
       for (const [key, dest] of node.value) {
-        const get = callInternal("get_prop", [valueRef, b.literal(key)]);
+        const get = callInternal("get_prop", [
+          valueRef,
+          b.literal(key),
+          loc(dest), // FIXME: keyのlocを使う
+        ]);
         yield* generateAssignDest(dest, get, scope, ctx);
       }
       break;

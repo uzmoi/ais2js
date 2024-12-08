@@ -53,57 +53,65 @@ export const typeOf = (value: AiScriptValue): AiScriptValueTypeName => {
 
 export type AssertFunction<T extends AiScriptValue> = (
   value: AiScriptValue,
+  pos?: [line: number, column: number],
 ) => asserts value is T;
 
-export const assertBoolean: AssertFunction<number> = value => {
+const printPos = (pos: [line: number, column: number] | undefined) =>
+  pos?.join(":") ?? "<internal>";
+
+export const assertBoolean: AssertFunction<number> = (value, pos) => {
   if (typeof value !== "boolean") {
-    throw new Error();
+    throw new Error(`Expect bool at ${printPos(pos)}`);
   }
 };
 
-export const assertNumber: AssertFunction<number> = value => {
+export const assertNumber: AssertFunction<number> = (value, pos) => {
   if (typeof value !== "number") {
-    throw new Error();
+    throw new Error(`Expect num at ${printPos(pos)}`);
   }
 };
 
-export const assertString: AssertFunction<string> = value => {
+export const assertString: AssertFunction<string> = (value, pos) => {
   if (typeof value !== "string") {
-    throw new Error();
+    throw new Error(`Expect str at ${printPos(pos)}`);
   }
 };
 
-export const assertArray: AssertFunction<AiScriptValue[]> = value => {
+export const assertArray: AssertFunction<AiScriptValue[]> = (value, pos) => {
   if (!Array.isArray(value)) {
-    throw new Error();
+    throw new Error(`Expect arr at ${printPos(pos)}`);
   }
 };
 
 export const assertArrayOf: <T extends AiScriptValue>(
   value: AiScriptValue,
   assert: (value: AiScriptValue) => asserts value is T,
+  pos?: [line: number, column: number],
 ) => asserts value is T[] = <T extends AiScriptValue>(
   value: AiScriptValue,
   assert: (value: AiScriptValue) => asserts value is T,
+  pos?: [line: number, column: number],
 ) => {
-  assertArray(value);
+  assertArray(value, pos);
   for (const element of value) {
     assert(element);
   }
 };
 
-export const assertObject: AssertFunction<
-  Map<string, AiScriptValue>
-> = value => {
+export const assertObject: AssertFunction<Map<string, AiScriptValue>> = (
+  value,
+  pos,
+) => {
   if (!(value instanceof Map)) {
-    throw new Error();
+    throw new Error(`Expect obj at ${printPos(pos)}`);
   }
 };
 
-export const assertFn: AssertFunction<
-  Extract<AiScriptValue, () => unknown>
-> = value => {
+export const assertFn: AssertFunction<Extract<AiScriptValue, () => unknown>> = (
+  value,
+  pos,
+) => {
   if (typeof value !== "function") {
-    throw new Error();
+    throw new Error(`Expect fn at ${printPos(pos)}`);
   }
 };

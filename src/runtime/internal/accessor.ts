@@ -7,20 +7,27 @@ import {
   typeOf,
 } from "./types";
 
-export const getProp = (target: AiScriptValue, name: string): AiScriptValue => {
+type Pos = [line: number, column: number];
+
+export const getProp = (
+  target: AiScriptValue,
+  name: string,
+  pos: Pos,
+): AiScriptValue => {
   if (target instanceof Map) {
     return target.get(name) ?? null;
   }
 
-  return builtinProperty(target, name);
+  return builtinProperty(target, name, pos);
 };
 
 export const setProp = (
   target: AiScriptValue,
   name: string,
   value: AiScriptValue,
+  pos: Pos,
 ): void => {
-  assertObject(target);
+  assertObject(target, pos);
 
   target.set(name, value);
 };
@@ -28,9 +35,10 @@ export const setProp = (
 export const getIndex = (
   target: AiScriptValue,
   index: AiScriptValue,
+  pos: Pos,
 ): AiScriptValue => {
   if (Array.isArray(target)) {
-    assertNumber(index);
+    assertNumber(index, pos);
     if (!(0 <= index && index < target.length)) {
       throw new Error("Index out of range.");
     }
@@ -38,7 +46,7 @@ export const getIndex = (
   }
 
   if (target instanceof Map) {
-    assertString(index);
+    assertString(index, pos);
     return target.get(index) ?? null;
   }
 
@@ -49,9 +57,10 @@ export const setIndex = (
   target: AiScriptValue,
   index: AiScriptValue,
   value: AiScriptValue,
+  pos: Pos,
 ): void => {
   if (Array.isArray(target)) {
-    assertNumber(index);
+    assertNumber(index, pos);
     if (!(0 <= index && index < target.length)) {
       throw new Error("Index out of range.");
     }
@@ -60,7 +69,7 @@ export const setIndex = (
   }
 
   if (target instanceof Map) {
-    assertString(index);
+    assertString(index, pos);
     target.set(index, value);
     return;
   }
