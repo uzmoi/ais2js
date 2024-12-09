@@ -359,7 +359,12 @@ function* generateLogicalOperator(
   const left = yield* generateExpression(node.left, scope, ctx);
   yield b.variableDeclaration("let", [b.variableDeclarator(result, left)]);
 
+  yield createAssertion("boolean", result, node.left);
+
   const right = createBlock(result, generateExpression(node.right, scope, ctx));
+
+  right.body.push(createAssertion("boolean", result, node.right));
+
   yield b.ifStatement(
     node.type === "or" ? b.unaryExpression("!", result) : result,
     right,

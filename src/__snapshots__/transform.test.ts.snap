@@ -294,9 +294,11 @@ a - b;
 
 exports[`operators > logic > and 1`] = `
 "let __and_result__ = a;
+assert_boolean(__and_result__, [1, 0]);
 if (__and_result__) {
   const __ref__ = get_prop(b, "c", [1, 6]);
   __and_result__ = await call(__ref__, [], [1, 8]);
+  assert_boolean(__and_result__, [1, 8]);
 }
 __and_result__;
 "
@@ -304,9 +306,11 @@ __and_result__;
 
 exports[`operators > logic > or 1`] = `
 "let __or_result__ = a;
+assert_boolean(__or_result__, [1, 0]);
 if (!__or_result__) {
   const __ref__ = get_prop(b, "c", [1, 6]);
   __or_result__ = await call(__ref__, [], [1, 8]);
+  assert_boolean(__or_result__, [1, 8]);
 }
 __or_result__;
 "
