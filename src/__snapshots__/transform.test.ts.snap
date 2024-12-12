@@ -111,6 +111,7 @@ exports[`fn > arguments > default 1`] = `
 "const __ref__ = 0;
 const hoge = async arg_0 => {
   const arg = arg_0;
+  return null;
 };
 "
 `;
@@ -149,13 +150,16 @@ exports[`fn > implicit return 1`] = `
 `;
 
 exports[`fn > noop fn 1`] = `
-"const noop = async () => {};
+"const noop = async () => {
+  return null;
+};
 "
 `;
 
 exports[`fn > return 1`] = `
 "const hoge = async () => {
   return 0;
+  return null;
 };
 "
 `;

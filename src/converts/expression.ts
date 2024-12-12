@@ -286,9 +286,7 @@ function* generateFn(node: Ast.Fn, scope: Scope, ctx: Context): CodeGenerator {
 
       const result = yield* generateStatementList(node.children, fnScope, ctx);
 
-      if (result != null) {
-        yield b.returnStatement(result);
-      }
+      yield b.returnStatement(result ?? b.literal(null));
     }
     body.push(...generateFnBody());
   });
