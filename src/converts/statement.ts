@@ -104,22 +104,26 @@ function* generateAssign(
 
     switch (node.dest.type) {
       case "identifier": {
-        const jsName = scope.ref(node.dest.name);
-        if (jsName == null) {
+        const entry = scope.ref(node.dest.name);
+        if (entry == null) {
           yield createThrowError(
             b.literal(`Undefined variable: ${node.dest.name}`),
           );
-        } else {
+        } else if (entry.mutable) {
           yield b.expressionStatement(
             b.assignmentExpression.from({
               operator: `${operator}=`,
               left: b.identifier.from({
-                name: jsName,
+                name: entry.jsName,
                 loc: node.dest.loc,
               }),
               right,
               loc: node.loc,
             }),
+          );
+        } else {
+          yield createThrowError(
+            b.literal(`Immutable variable: ${node.dest.name}`),
           );
         }
         break;
@@ -207,7 +211,7 @@ function* generateFor(
     yield createAssertion("number", to, node.to!);
 
     const forScope = scope.child();
-    const jsName = forScope.define(node.var!);
+    const jsName = forScope.define(node.var!, { mutable: false });
 
     const index = b.identifier(jsName);
 

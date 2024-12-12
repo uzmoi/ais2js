@@ -1,7 +1,8 @@
 import { internals } from "./runtime/internal";
 
-interface ScopeEntry {
+export interface ScopeEntry {
   jsName: string;
+  mutable: boolean;
 }
 
 export class Scope {
@@ -29,15 +30,15 @@ export class Scope {
     this.usedJsNames.add(jsName);
     return jsName;
   }
-  define(name: string): string {
+  define(name: string, config: { mutable: boolean }): string {
     const jsName = this.newId(name);
-    this.entries.set(name, { jsName });
+    this.entries.set(name, { jsName, ...config });
     return jsName;
   }
-  ref(name: string): string | undefined {
+  ref(name: string): ScopeEntry | undefined {
     const entry = this.entries.get(name);
     if (entry != null) {
-      return entry.jsName;
+      return entry;
     }
 
     return this.parent?.ref(name);
@@ -54,9 +55,9 @@ class NamespaceScope extends Scope {
   }
   override define(name: string): string {
     const jsName = this.parent!.define(`${this.nsName}:${name}`, {
-      mutable: true,
+      mutable: false,
     });
-    this.entries.set(name, { jsName, mutable: true });
+    this.entries.set(name, { jsName, mutable: false });
     return jsName;
   }
 }

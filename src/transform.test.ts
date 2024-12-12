@@ -6,7 +6,7 @@ const t = (source: string, globals: readonly string[] = []) => {
   const scope = Scope.createRoot();
 
   for (const global of globals) {
-    scope.define(global, { mutable: false });
+    scope.define(global, { mutable: true });
   }
 
   return transform(source, scope);
@@ -55,6 +55,8 @@ describe("assignment", () => {
       a = 1
       a += 2
       a -= 3
+      let b = 4
+      b = 5
     `;
     expect(t(source, ["a"])).toMatchSnapshot();
   });
@@ -76,7 +78,8 @@ describe("assignment", () => {
   });
   test("dest", () => {
     const source = `
-      [{ identifier: b, prop: b.c, index: b[c] }] = a
+      let d = null
+      [{ identifier: b, prop: b.c, index: b[c] }, d] = a
     `;
     expect(t(source, ["a", "b", "c"])).toMatchSnapshot();
   });

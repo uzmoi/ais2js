@@ -92,8 +92,8 @@ export function* generateExpression(
     case "exists":
       throw new Error("Not implemented yet.");
     case "identifier": {
-      const jsName = scope.ref(node.name);
-      if (jsName == null) {
+      const entry = scope.ref(node.name);
+      if (entry == null) {
         return createIife(
           b.blockStatement([
             createThrowError(b.literal(`Undefined variable: ${node.name}`)),
@@ -101,7 +101,7 @@ export function* generateExpression(
         );
       }
       return b.identifier.from({
-        name: jsName,
+        name: entry.jsName,
         loc: node.loc,
       });
     }

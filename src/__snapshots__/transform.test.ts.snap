@@ -11,11 +11,13 @@ exports[`accessors > prop 1`] = `
 `;
 
 exports[`assignment > dest 1`] = `
-"const __dest__ = a;
-const __dest__2 = get_index(__dest__, 0, [2, 7]);
-b = get_prop(__dest__2, "identifier", [2, 21]);
-set_prop(b, "c", get_prop(__dest__2, "prop", [2, 31]), [2, 31]);
-set_index(b, c, get_prop(__dest__2, "index", [2, 43]), [2, 43]);
+"const d = null;
+const __dest__ = a;
+const __dest__2 = get_index(__dest__, 0, [3, 7]);
+b = get_prop(__dest__2, "identifier", [3, 21]);
+set_prop(b, "c", get_prop(__dest__2, "prop", [3, 31]), [3, 31]);
+set_index(b, c, get_prop(__dest__2, "index", [3, 43]), [3, 43]);
+throw new Error("Immutable variable: d");
 "
 `;
 
@@ -23,6 +25,8 @@ exports[`assignment > identifier 1`] = `
 "a = 1;
 a += 2;
 a -= 3;
+const b = 4;
+throw new Error("Immutable variable: b");
 "
 `;
 

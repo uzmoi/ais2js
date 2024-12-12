@@ -10,15 +10,15 @@ export function* generateDefinitionDest(
   node: Ast.Expression,
   init: K.ExpressionKind,
   scope: Scope,
-  mut = false,
+  mutable = false,
 ): Generator<K.StatementKind, void> {
   switch (node.type) {
     case "identifier": {
       const id = b.identifier.from({
-        name: scope.define(node.name),
+        name: scope.define(node.name, { mutable }),
         loc: node.loc,
       });
-      yield b.variableDeclaration(mut ? "let" : "const", [
+      yield b.variableDeclaration(mutable ? "let" : "const", [
         b.variableDeclarator(id, init),
       ]);
       break;
@@ -35,7 +35,7 @@ export function* generateDefinitionDest(
           b.literal(i),
           loc(element),
         ]);
-        yield* generateDefinitionDest(element, get, scope, mut);
+        yield* generateDefinitionDest(element, get, scope, mutable);
       }
 
       break;
@@ -52,7 +52,7 @@ export function* generateDefinitionDest(
           b.literal(key),
           loc(value), // FIXME: keyのlocを使う
         ]);
-        yield* generateDefinitionDest(value, get, scope, mut);
+        yield* generateDefinitionDest(value, get, scope, mutable);
       }
 
       break;
@@ -70,17 +70,19 @@ export function* generateAssignDest(
 ): Generator<K.StatementKind, void> {
   switch (node.type) {
     case "identifier": {
-      const jsName = scope.ref(node.name);
-      if (jsName == null) {
+      const entry = scope.ref(node.name);
+      if (entry == null) {
         yield createThrowError(b.literal(`Undefined variable: ${node.name}`));
-      } else {
+      } else if (entry.mutable) {
         const identifier = b.identifier.from({
-          name: jsName,
+          name: entry.jsName,
           loc: node.loc,
         });
         yield b.expressionStatement(
           b.assignmentExpression("=", identifier, value),
         );
+      } else {
+        yield createThrowError(b.literal(`Immutable variable: ${node.name}`));
       }
       break;
     }
