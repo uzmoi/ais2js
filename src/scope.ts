@@ -31,6 +31,9 @@ export class Scope {
     return jsName;
   }
   define(name: string, config: { mutable: boolean }): string {
+    if (this.entries.has(name)) {
+      throw new Error(`Variable '${name}' already exists.`);
+    }
     const jsName = this.newId(name);
     this.entries.set(name, { jsName, ...config });
     return jsName;
