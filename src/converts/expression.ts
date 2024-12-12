@@ -89,8 +89,19 @@ export function* generateExpression(
       return yield* generateCall(node, scope, ctx);
 
     // Operation
-    case "exists":
-      throw new Error("Not implemented yet.");
+    case "exists": {
+      /* FIXME: 関数の外で変数宣言をした場合の結果が @syuilo/aiscript と違う
+      ECMAScript 的には Temporal Dead Zone なので typeof でもエラーが投げられる。var 使うか？
+      ref. https://zenn.dev/qnighy/articles/f3d2d7adc75948
+      ref. https://zenn.dev/pixiv/articles/4c7a4399f6a8c7
+      ```ais
+      @f() { exists hoge }
+      <: f() // @syuilo/aiscript だとfalse、↓の実装だとtrue
+      let hoge = 0
+      ``` */
+      const entry = scope.ref(node.identifier.name);
+      return b.literal(entry != null);
+    }
     case "identifier": {
       const entry = scope.ref(node.name);
       if (entry == null) {
@@ -100,6 +111,9 @@ export function* generateExpression(
           ]),
         );
       }
+
+      // FIXME: existsと同じことが変数参照でも起きる。
+      // 結果的にエラーになるのは変わらないが、投げられるエラーが JavaScript の ReferenceError になる。
       return b.identifier.from({
         name: entry.jsName,
         loc: node.loc,
