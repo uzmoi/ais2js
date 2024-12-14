@@ -1,9 +1,9 @@
 export class Context {
   private readonly queue: (() => void)[] = [];
-  onGenerateEnd(f: () => void) {
+  defer(f: () => void) {
     this.queue.push(f);
   }
-  generateEnd() {
+  runDeferTask() {
     while (this.queue.length > 0) {
       this.queue.pop()!();
     }

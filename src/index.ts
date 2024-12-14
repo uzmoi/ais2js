@@ -30,7 +30,7 @@ export const transform = (source: string, scope: Scope): string => {
   const context = new Context();
 
   const program = createProgram(nodes, scope.child(), context);
-  context.generateEnd();
+  context.runDeferTask();
 
   return generate(program);
 };

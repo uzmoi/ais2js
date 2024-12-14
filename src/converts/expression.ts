@@ -274,7 +274,7 @@ function* generateFn(node: Ast.Fn, scope: Scope, ctx: Context): CodeGenerator {
 
   const body: K.StatementKind[] = [];
 
-  ctx.onGenerateEnd(() => {
+  ctx.defer(() => {
     function* generateFnBody() {
       for (const [i, param] of node.params.entries()) {
         yield* generateDefinitionDest(
