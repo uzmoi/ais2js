@@ -1,5 +1,6 @@
 import { getIndex, getProp, setIndex, setProp } from "./accessor";
 import { call } from "./call";
+import { internalError } from "./error";
 import { repr } from "./repr";
 import {
   type AiScriptValue,
@@ -21,6 +22,7 @@ export const internals = new (
   ["set_prop", setProp],
   ["get_index", getIndex],
   ["set_index", setIndex],
+  ["internal_error", internalError],
   ["assert_boolean", assertBoolean],
   ["assert_number", assertNumber],
   ["assert_array", assertArray],

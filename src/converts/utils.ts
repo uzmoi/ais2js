@@ -2,6 +2,7 @@ import type { Ast } from "@syuilo/aiscript";
 import { builders as b, type namedTypes as n } from "ast-types";
 import type * as K from "ast-types/gen/kinds";
 import type { internals } from "../runtime/internal";
+import type { ErrorCode } from "../runtime/internal/error";
 import type { Ref } from "./expression";
 
 export type CodeGenerator = Generator<K.StatementKind, K.ExpressionKind | null>;
@@ -29,12 +30,6 @@ export const createBlock = (
     ),
   ]);
 
-export const createIife = (body: n.BlockStatement | K.ExpressionKind) =>
-  b.callExpression(b.arrowFunctionExpression([], body), []);
-
-export const createThrowError = (message: K.ExpressionKind) =>
-  b.throwStatement(b.newExpression(b.identifier("Error"), [message]));
-
 type InternalName = typeof internals extends ReadonlyMap<infer T, unknown>
   ? T
   : never;
@@ -51,6 +46,15 @@ export const createAssertion = (
   ref: Ref,
   node: { loc: Ast.Loc },
 ) => b.expressionStatement(callInternal(`assert_${type}`, [ref, loc(node)]));
+
+export const internalError = (
+  code: ErrorCode,
+  options: K.ExpressionKind,
+  node: { loc: Ast.Loc },
+) =>
+  b.expressionStatement(
+    callInternal("internal_error", [b.literal(code), options, loc(node)]),
+  );
 
 type Literal =
   | null

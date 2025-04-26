@@ -17,30 +17,40 @@ const __dest__2 = get_index(__dest__, 0, [3, 7]);
 b = get_prop(__dest__2, "identifier", [3, 21]);
 set_prop(b, "c", get_prop(__dest__2, "prop", [3, 31]), [3, 31]);
 set_index(b, c, get_prop(__dest__2, "index", [3, 43]), [3, 43]);
-throw new Error("Immutable variable: d");
+internal_error("immutable_variable", "d", [3, 50]);
 "
 `;
 
 exports[`assignment > identifier 1`] = `
-"a = 1;
-a += 2;
-a -= 3;
+"const __ref__ = 1;
+a = __ref__;
+const __ref__2 = 2;
+a += __ref__2;
+const __ref__3 = 3;
+a -= __ref__3;
 const b = 4;
-throw new Error("Immutable variable: b");
+const __ref__4 = 5;
+internal_error("immutable_variable", "b", [6, 6]);
 "
 `;
 
 exports[`assignment > index 1`] = `
-"set_index(a, b, 1, [2, 7]);
-set_index(a, b, get_index(a, b) + 2);
-set_index(a, b, get_index(a, b) - 3);
+"const __ref__ = 1;
+set_index(a, b, __ref__, [2, 7]);
+const __ref__2 = 2;
+set_index(a, b, get_index(a, b) + __ref__2);
+const __ref__3 = 3;
+set_index(a, b, get_index(a, b) - __ref__3);
 "
 `;
 
 exports[`assignment > prop 1`] = `
-"set_prop(a, "b", 1, [2, 7]);
-set_prop(a, "b", get_prop(a, "b") + 2);
-set_prop(a, "b", get_prop(a, "b") - 3);
+"const __ref__ = 1;
+set_prop(a, "b", __ref__, [2, 7]);
+const __ref__2 = 2;
+set_prop(a, "b", get_prop(a, "b") + __ref__2);
+const __ref__3 = 3;
+set_prop(a, "b", get_prop(a, "b") - __ref__3);
 "
 `;
 
@@ -364,9 +374,7 @@ exports[`variables > reference 1`] = `
 `;
 
 exports[`variables > undefined 1`] = `
-"(() => {
-  throw new Error("Undefined variable: hoge");
-})();
+"internal_error("not_defined", "hoge", [1, 0]);
 "
 `;
 

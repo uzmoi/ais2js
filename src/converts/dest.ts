@@ -4,7 +4,7 @@ import type * as K from "ast-types/gen/kinds";
 import type { Context } from "../context";
 import type { Scope } from "../scope";
 import { generateExpression, generateRef } from "./expression";
-import { callInternal, createThrowError, loc } from "./utils";
+import { callInternal, internalError, loc } from "./utils";
 
 export function* generateDefinitionDest(
   node: Ast.Expression,
@@ -72,7 +72,7 @@ export function* generateAssignDest(
     case "identifier": {
       const entry = scope.ref(node.name);
       if (entry == null) {
-        yield createThrowError(b.literal(`Undefined variable: ${node.name}`));
+        yield internalError("not_defined", b.literal(node.name), node);
       } else if (entry.mutable) {
         const identifier = b.identifier.from({
           name: entry.jsName,
@@ -82,7 +82,7 @@ export function* generateAssignDest(
           b.assignmentExpression("=", identifier, value),
         );
       } else {
-        yield createThrowError(b.literal(`Immutable variable: ${node.name}`));
+        yield internalError("immutable_variable", b.literal(node.name), node);
       }
       break;
     }

@@ -10,8 +10,7 @@ import {
   callInternal,
   createAssertion,
   createBlock,
-  createIife,
-  createThrowError,
+  internalError,
   loc,
 } from "./utils";
 
@@ -105,11 +104,8 @@ export function* generateExpression(
     case "identifier": {
       const entry = scope.ref(node.name);
       if (entry == null) {
-        return createIife(
-          b.blockStatement([
-            createThrowError(b.literal(`Undefined variable: ${node.name}`)),
-          ]),
-        );
+        return internalError("not_defined", b.literal(node.name), node)
+          .expression;
       }
 
       // FIXME: existsと同じことが変数参照でも起きる。

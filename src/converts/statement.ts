@@ -9,7 +9,7 @@ import {
   type CodeGenerator,
   callInternal,
   createAssertion,
-  createThrowError,
+  internalError,
 } from "./utils";
 
 export function* generateStatementList(
@@ -95,42 +95,39 @@ function* generateAssign(
   scope: Scope,
   ctx: Context,
 ): Generator<K.StatementKind, void> {
-  const right = yield* generateExpression(node.expr, scope, ctx);
+  const right = yield* generateRef(node.expr, scope, ctx);
 
   if (node.type === "assign") {
     yield* generateAssignDest(node.dest, right, scope, ctx);
   } else {
     const operator = node.type === "addAssign" ? "+" : "-";
+    const { dest } = node;
 
-    switch (node.dest.type) {
+    switch (dest.type) {
       case "identifier": {
-        const entry = scope.ref(node.dest.name);
+        const entry = scope.ref(dest.name);
         if (entry == null) {
-          yield createThrowError(
-            b.literal(`Undefined variable: ${node.dest.name}`),
-          );
+          yield internalError("not_defined", b.literal(dest.name), dest);
         } else if (entry.mutable) {
           yield b.expressionStatement(
             b.assignmentExpression.from({
               operator: `${operator}=`,
               left: b.identifier.from({
                 name: entry.jsName,
-                loc: node.dest.loc,
+                loc: dest.loc,
               }),
               right,
               loc: node.loc,
             }),
           );
         } else {
-          yield createThrowError(
-            b.literal(`Immutable variable: ${node.dest.name}`),
-          );
+          yield internalError("immutable_variable", b.literal(dest.name), dest);
         }
         break;
       }
       case "index": {
-        const target = yield* generateRef(node.dest.target, scope, ctx);
-        const index = yield* generateRef(node.dest.index, scope, ctx);
+        const target = yield* generateRef(dest.target, scope, ctx);
+        const index = yield* generateRef(dest.index, scope, ctx);
 
         const get = callInternal("get_index", [target, index]);
         const newValue = b.binaryExpression(operator, get, right);
@@ -140,8 +137,8 @@ function* generateAssign(
         break;
       }
       case "prop": {
-        const target = yield* generateRef(node.dest.target, scope, ctx);
-        const name = b.literal(node.dest.name);
+        const target = yield* generateRef(dest.target, scope, ctx);
+        const name = b.literal(dest.name);
 
         const get = callInternal("get_prop", [target, name]);
         const newValue = b.binaryExpression(operator, get, right);
@@ -152,7 +149,7 @@ function* generateAssign(
       }
       case "arr":
       case "obj": {
-        yield createThrowError(b.literal(`Invalid dest: ${node.dest.type}`));
+        yield createAssertion("number", right, dest);
         break;
       }
       default:
